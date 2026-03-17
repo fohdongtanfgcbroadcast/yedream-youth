@@ -11,11 +11,31 @@ const MOCK_PROFILES: Record<string, Profile> = {
     created_at: '2024-01-01',
     updated_at: '2024-01-01',
   },
-  instructor: {
+  // 강사 계정 - 각 반에 배정
+  instructor1: {
     id: 'instructor-001',
     role: 'instructor',
     display_name: '박강사',
     phone: '010-2345-6789',
+    assigned_class_id: 'c1', // 1반 담당
+    created_at: '2024-01-01',
+    updated_at: '2024-01-01',
+  },
+  instructor2: {
+    id: 'instructor-002',
+    role: 'instructor',
+    display_name: '최강사',
+    phone: '010-3456-7890',
+    assigned_class_id: 'c2', // 2반 담당
+    created_at: '2024-01-01',
+    updated_at: '2024-01-01',
+  },
+  instructor3: {
+    id: 'instructor-003',
+    role: 'instructor',
+    display_name: '정강사',
+    phone: '010-4567-8901',
+    assigned_class_id: 'c3', // 3반 담당
     created_at: '2024-01-01',
     updated_at: '2024-01-01',
   },
@@ -23,7 +43,7 @@ const MOCK_PROFILES: Record<string, Profile> = {
     id: 'member-001',
     role: 'member',
     display_name: '이청년',
-    phone: '010-3456-7890',
+    phone: '010-5678-9012',
     created_at: '2024-01-01',
     updated_at: '2024-01-01',
   },
@@ -37,6 +57,7 @@ interface AuthState {
   logout: () => void;
   isAdmin: () => boolean;
   isInstructor: () => boolean;
+  getAssignedClassId: () => string | undefined;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -46,7 +67,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   login: async (userId: string, _password: string) => {
     set({ isLoading: true });
-    // 프로토타입: Mock 로그인
     await new Promise((r) => setTimeout(r, 500));
     const profile = MOCK_PROFILES[userId] || MOCK_PROFILES.admin;
     set({ profile, isAuthenticated: true, isLoading: false });
@@ -59,4 +79,5 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   isAdmin: () => get().profile?.role === 'admin',
   isInstructor: () => get().profile?.role === 'instructor' || get().profile?.role === 'admin',
+  getAssignedClassId: () => (get().profile as any)?.assigned_class_id,
 }));

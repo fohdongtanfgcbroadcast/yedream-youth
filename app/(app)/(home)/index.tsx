@@ -10,6 +10,7 @@ import { formatDate } from '../../../src/lib/utils';
 export default function HomeScreen() {
   const router = useRouter();
   const profile = useAuthStore((s) => s.profile);
+  const isAdmin = useAuthStore((s) => s.isAdmin)();
   const todaySummary = useDataStore((s) => s.getTodayAttendanceSummary)();
   const birthdayMembers = useDataStore((s) => s.getBirthdayMembers)();
   const members = useDataStore((s) => s.members);
@@ -104,6 +105,15 @@ export default function HomeScreen() {
               compact
             >
               출석 체크
+            </Button>
+            <Button
+              mode="contained"
+              icon="account-group"
+              onPress={() => router.push('/(app)/(classes)')}
+              style={[styles.quickButton, { backgroundColor: '#8E44AD' }]}
+              compact
+            >
+              반별 조회
             </Button>
             <Button
               mode="contained"

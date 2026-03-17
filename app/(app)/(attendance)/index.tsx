@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, Alert } from 'react-native';
-import { Text, Card, Button, Checkbox, SegmentedButtons, Divider, Chip } from 'react-native-paper';
+import { Text, Card, Button, Checkbox, SegmentedButtons, Divider, Chip, Banner } from 'react-native-paper';
 import { useAuthStore } from '../../../src/stores/auth-store';
 import { useDataStore } from '../../../src/stores/data-store';
 import { COLORS, ATTENDANCE_TYPES } from '../../../src/lib/constants';
@@ -8,26 +8,32 @@ import { AttendanceType } from '../../../src/types';
 
 export default function AttendanceScreen() {
   const profile = useAuthStore((s) => s.profile);
-  const { members, classes, attendanceRecords, addAttendance, removeAttendance, getAttendanceByDateAndType } = useDataStore();
+  const isAdmin = useAuthStore((s) => s.isAdmin)();
+  const assignedClassId = useAuthStore((s) => s.getAssignedClassId)();
+  const { members, classes, attendanceRecords, addAttendance, getAttendanceByDateAndType } = useDataStore();
 
   const [selectedType, setSelectedType] = useState<AttendanceType>('주일예배');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [checkedMembers, setCheckedMembers] = useState<Set<string>>(new Set());
   const [showHistory, setShowHistory] = useState(false);
 
-  // 현재 날짜의 출석 기록
   const existingAttendance = useMemo(
     () => getAttendanceByDateAndType(selectedDate, selectedType),
     [selectedDate, selectedType, attendanceRecords]
   );
 
-  // 이미 출석 체크된 멤버 ID
   const alreadyChecked = useMemo(
     () => new Set(existingAttendance.map((a) => a.member_id)),
     [existingAttendance]
   );
 
-  const activeClasses = classes.filter((c) => c.is_active);
+  // 강사는 담당 반만, 관리자는 전체
+  const visibleClasses = useMemo(() => {
+    const active = classes.filter((c) => c.is_active);
+    if (isAdmin) return active;
+    if (assignedClassId) return active.filter((c) => c.id === assignedClassId);
+    return active;
+  }, [classes, isAdmin, assignedClassId]);
 
   const toggleMember = (memberId: string) => {
     const next = new Set(checkedMembers);
@@ -60,16 +66,13 @@ export default function AttendanceScreen() {
       Alert.alert('알림', '출석 체크할 인원을 선택해주세요.');
       return;
     }
-
     checkedMembers.forEach((memberId) => {
       addAttendance(memberId, selectedType, selectedDate, profile?.id);
     });
-
     Alert.alert('완료', `${checkedMembers.size}명의 출석이 등록되었습니다.`);
     setCheckedMembers(new Set());
   };
 
-  // 날짜 조절
   const adjustDate = (days: number) => {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() + days);
@@ -77,7 +80,6 @@ export default function AttendanceScreen() {
     setCheckedMembers(new Set());
   };
 
-  // 최근 출석 이력
   const recentRecords = useMemo(
     () => [...attendanceRecords]
       .sort((a, b) => b.attendance_date.localeCompare(a.attendance_date))
@@ -120,6 +122,17 @@ export default function AttendanceScreen() {
 
   return (
     <ScrollView style={styles.container}>
+      {/* 강사 안내 배너 */}
+      {!isAdmin && assignedClassId && (
+        <Card style={[styles.card, { backgroundColor: '#E8F4FD' }]}>
+          <Card.Content>
+            <Text style={{ color: COLORS.primary, fontSize: 13 }}>
+              담당 제자반의 출석만 관리할 수 있습니다.
+            </Text>
+          </Card.Content>
+        </Card>
+      )}
+
       {/* 출석 유형 선택 */}
       <Card style={styles.card}>
         <Card.Content>
@@ -144,7 +157,6 @@ export default function AttendanceScreen() {
         </Card.Content>
       </Card>
 
-      {/* 출석 이력 버튼 */}
       <Button
         mode="text"
         icon="history"
@@ -154,8 +166,8 @@ export default function AttendanceScreen() {
         출석 이력 보기
       </Button>
 
-      {/* 제자반별 체크리스트 */}
-      {activeClasses.map((cls) => {
+      {/* 제자반별 체크리스트 (강사는 담당 반만) */}
+      {visibleClasses.map((cls) => {
         const classMembers = members.filter((m) => m.class_id === cls.id && m.is_active);
         if (classMembers.length === 0) return null;
 
@@ -165,7 +177,7 @@ export default function AttendanceScreen() {
           <Card key={cls.id} style={styles.card}>
             <Card.Content>
               <View style={styles.classHeader}>
-                <Text style={styles.className}>{cls.name}</Text>
+                <Text style={styles.className}>{cls.name} ({classMembers.length}명)</Text>
                 <Button mode="text" onPress={() => toggleClassAll(cls.id)} compact>
                   {allChecked ? '전체 해제' : '전체 선택'}
                 </Button>
@@ -193,7 +205,6 @@ export default function AttendanceScreen() {
         );
       })}
 
-      {/* 제출 버튼 */}
       <Button
         mode="contained"
         onPress={handleSubmit}

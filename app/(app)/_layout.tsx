@@ -29,6 +29,14 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="(classes)"
+        options={{
+          title: '반별',
+          headerTitle: '반별 조회',
+          tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="account-group" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="(attendance)"
         options={{
           title: '출석',
@@ -52,17 +60,17 @@ export default function AppLayout() {
           tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="magnify" size={size} color={color} />,
         }}
       />
+      {/* 관리자만 관리 탭 노출 */}
       <Tabs.Screen
         name="(admin)"
         options={{
           title: '관리',
           headerTitle: '관리 메뉴',
           tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="cog" size={size} color={color} />,
+          href: isAdmin ? undefined : null,
         }}
       />
-      {/* 숨겨진 탭 */}
       <Tabs.Screen name="(members)" options={{ href: null }} />
-      <Tabs.Screen name="(classes)" options={{ href: null }} />
     </Tabs>
   );
 }

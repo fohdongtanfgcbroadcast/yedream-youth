@@ -1,50 +1,95 @@
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert } from 'react-native';
 import {
-  Text, Card, Button, TextInput, List, IconButton, Portal, Modal, Divider, Avatar,
+  Text, Card, Button, TextInput, List, IconButton, Divider, Avatar, Chip,
 } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../src/stores/auth-store';
 import { useDataStore } from '../../../src/stores/data-store';
 import { COLORS, ROLES } from '../../../src/lib/constants';
+import { formatDate, calculateAge } from '../../../src/lib/utils';
 
-type AdminSection = 'menu' | 'members' | 'classes' | 'addMember' | 'addClass';
+type AdminSection = 'menu' | 'members' | 'classes' | 'addMember' | 'addClass' | 'editMember' | 'newFamily' | 'accounts' | 'notifications';
 
 export default function AdminScreen() {
   const router = useRouter();
   const profile = useAuthStore((s) => s.profile);
   const logout = useAuthStore((s) => s.logout);
   const isAdmin = useAuthStore((s) => s.isAdmin)();
-  const { members, classes, addMember, deleteMember, addClass, deleteClass } = useDataStore();
+  const { members, classes, addMember, updateMember, deleteMember, addClass, deleteClass } = useDataStore();
 
   const [section, setSection] = useState<AdminSection>('menu');
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
 
-  // 회원 추가 폼
-  const [newName, setNewName] = useState('');
-  const [newDob, setNewDob] = useState('');
-  const [newPhone, setNewPhone] = useState('');
-  const [newClassId, setNewClassId] = useState('');
+  // 회원 추가/수정 폼
+  const [formName, setFormName] = useState('');
+  const [formDob, setFormDob] = useState('');
+  const [formPhone, setFormPhone] = useState('');
+  const [formAddress, setFormAddress] = useState('');
+  const [formNotes, setFormNotes] = useState('');
+  const [formClassId, setFormClassId] = useState('');
 
   // 제자반 추가 폼
   const [newClassName, setNewClassName] = useState('');
   const [newClassDesc, setNewClassDesc] = useState('');
 
+  // 계정 관리 폼
+  const [accountEmail, setAccountEmail] = useState('');
+  const [accountName, setAccountName] = useState('');
+  const [accountRole, setAccountRole] = useState('member');
+
+  // 알림 설정 폼
+  const [notiTitle, setNotiTitle] = useState('');
+  const [notiBody, setNotiBody] = useState('');
+  const [notiDay, setNotiDay] = useState('0'); // 0=일요일
+  const [notiHour, setNotiHour] = useState('19');
+
+  const resetForm = () => {
+    setFormName(''); setFormDob(''); setFormPhone('');
+    setFormAddress(''); setFormNotes(''); setFormClassId('');
+    setEditingMemberId(null);
+  };
+
+  const openEditMember = (memberId: string) => {
+    const m = members.find((mem) => mem.id === memberId);
+    if (!m) return;
+    setEditingMemberId(memberId);
+    setFormName(m.name);
+    setFormDob(m.date_of_birth || '');
+    setFormPhone(m.phone || '');
+    setFormAddress(m.address || '');
+    setFormNotes(m.notes || '');
+    setFormClassId(m.class_id || '');
+    setSection('editMember');
+  };
+
   const handleAddMember = () => {
-    if (!newName.trim()) {
-      Alert.alert('알림', '이름을 입력해주세요.');
-      return;
-    }
+    if (!formName.trim()) { Alert.alert('알림', '이름을 입력해주세요.'); return; }
     addMember({
-      name: newName.trim(),
-      date_of_birth: newDob || undefined,
-      phone: newPhone || undefined,
-      class_id: newClassId || undefined,
+      name: formName.trim(),
+      date_of_birth: formDob || undefined,
+      phone: formPhone || undefined,
+      address: formAddress || undefined,
+      notes: formNotes || undefined,
+      class_id: formClassId || undefined,
     });
-    Alert.alert('완료', `${newName} 회원이 추가되었습니다.`);
-    setNewName('');
-    setNewDob('');
-    setNewPhone('');
-    setNewClassId('');
+    Alert.alert('완료', `${formName} 회원이 추가되었습니다.`);
+    resetForm();
+    setSection('members');
+  };
+
+  const handleUpdateMember = () => {
+    if (!editingMemberId || !formName.trim()) { Alert.alert('알림', '이름을 입력해주세요.'); return; }
+    updateMember(editingMemberId, {
+      name: formName.trim(),
+      date_of_birth: formDob || undefined,
+      phone: formPhone || undefined,
+      address: formAddress || undefined,
+      notes: formNotes || undefined,
+      class_id: formClassId || undefined,
+    });
+    Alert.alert('완료', '회원 정보가 수정되었습니다.');
+    resetForm();
     setSection('members');
   };
 
@@ -56,14 +101,10 @@ export default function AdminScreen() {
   };
 
   const handleAddClass = () => {
-    if (!newClassName.trim()) {
-      Alert.alert('알림', '제자반 이름을 입력해주세요.');
-      return;
-    }
+    if (!newClassName.trim()) { Alert.alert('알림', '제자반 이름을 입력해주세요.'); return; }
     addClass({ name: newClassName.trim(), description: newClassDesc || undefined });
     Alert.alert('완료', `${newClassName} 제자반이 추가되었습니다.`);
-    setNewClassName('');
-    setNewClassDesc('');
+    setNewClassName(''); setNewClassDesc('');
     setSection('classes');
   };
 
@@ -81,11 +122,29 @@ export default function AdminScreen() {
     ]);
   };
 
-  // 메인 메뉴
+  const handleCreateAccount = () => {
+    if (!accountEmail.trim() || !accountName.trim()) {
+      Alert.alert('알림', '이메일과 이름을 입력해주세요.');
+      return;
+    }
+    Alert.alert('완료', `${accountName} (${accountEmail}) 계정이 생성되었습니다.\n역할: ${ROLES[accountRole as keyof typeof ROLES]?.label}\n\n* 실제 Supabase 연동 시 이메일로 초대가 발송됩니다.`);
+    setAccountEmail(''); setAccountName(''); setAccountRole('member');
+  };
+
+  const handleSaveNotification = () => {
+    if (!notiTitle.trim() || !notiBody.trim()) {
+      Alert.alert('알림', '제목과 내용을 입력해주세요.');
+      return;
+    }
+    const days = ['일', '월', '화', '수', '목', '금', '토'];
+    Alert.alert('완료', `알림이 설정되었습니다.\n\n매주 ${days[Number(notiDay)]}요일 ${notiHour}시\n제목: ${notiTitle}\n내용: ${notiBody}`);
+    setNotiTitle(''); setNotiBody('');
+  };
+
+  // ============ 메인 메뉴 ============
   if (section === 'menu') {
     return (
       <ScrollView style={styles.container}>
-        {/* 프로필 카드 */}
         <Card style={styles.card}>
           <Card.Content style={styles.profileRow}>
             <Avatar.Text size={48} label={profile?.display_name?.charAt(0) || '?'} style={{ backgroundColor: COLORS.primary }} />
@@ -96,43 +155,47 @@ export default function AdminScreen() {
           </Card.Content>
         </Card>
 
-        {isAdmin && (
-          <>
-            <Card style={styles.card}>
-              <List.Item
-                title="회원 관리"
-                description={`${members.filter((m) => m.is_active).length}명`}
-                left={(props) => <List.Icon {...props} icon="account-group" />}
-                right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                onPress={() => setSection('members')}
-              />
-              <Divider />
-              <List.Item
-                title="제자반 관리"
-                description={`${classes.filter((c) => c.is_active).length}개`}
-                left={(props) => <List.Icon {...props} icon="school" />}
-                right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                onPress={() => setSection('classes')}
-              />
-              <Divider />
-              <List.Item
-                title="알림 설정"
-                description="예약 알림 관리"
-                left={(props) => <List.Icon {...props} icon="bell-ring" />}
-                right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                onPress={() => Alert.alert('알림', '프로토타입에서는 지원하지 않는 기능입니다.')}
-              />
-              <Divider />
-              <List.Item
-                title="계정 관리"
-                description="사용자 계정 생성/삭제"
-                left={(props) => <List.Icon {...props} icon="account-cog" />}
-                right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                onPress={() => Alert.alert('알림', '프로토타입에서는 지원하지 않는 기능입니다.')}
-              />
-            </Card>
-          </>
-        )}
+        <Card style={styles.card}>
+          <List.Item
+            title="새가족 등록"
+            description="새로운 청년 등록"
+            left={(props) => <List.Icon {...props} icon="account-plus" color={COLORS.success} />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => { resetForm(); setSection('newFamily'); }}
+          />
+          <Divider />
+          <List.Item
+            title="회원 관리"
+            description={`${members.filter((m) => m.is_active).length}명 | 정보 수정/삭제`}
+            left={(props) => <List.Icon {...props} icon="account-group" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => setSection('members')}
+          />
+          <Divider />
+          <List.Item
+            title="제자반 관리"
+            description={`${classes.filter((c) => c.is_active).length}개`}
+            left={(props) => <List.Icon {...props} icon="school" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => setSection('classes')}
+          />
+          <Divider />
+          <List.Item
+            title="계정 관리"
+            description="사용자 계정 생성/역할 설정"
+            left={(props) => <List.Icon {...props} icon="account-cog" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => setSection('accounts')}
+          />
+          <Divider />
+          <List.Item
+            title="알림 설정"
+            description="예약 알림 관리"
+            left={(props) => <List.Icon {...props} icon="bell-ring" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => setSection('notifications')}
+          />
+        </Card>
 
         <Card style={styles.card}>
           <List.Item
@@ -143,12 +206,61 @@ export default function AdminScreen() {
           />
         </Card>
 
-        <Text style={styles.version}>예닮드림 청년부 v0.1.0 (프로토타입)</Text>
+        <Text style={styles.version}>예닮드림 청년부 v0.2.0</Text>
       </ScrollView>
     );
   }
 
-  // 회원 관리
+  // ============ 새가족 등록 ============
+  if (section === 'newFamily') {
+    return (
+      <ScrollView style={styles.container}>
+        <View style={styles.sectionHeader}>
+          <Button icon="arrow-left" onPress={() => { resetForm(); setSection('menu'); }}>뒤로</Button>
+          <Text style={styles.sectionTitle}>새가족 등록</Text>
+          <View style={{ width: 80 }} />
+        </View>
+        <Card style={styles.card}>
+          <Card.Content>
+            <TextInput label="이름 *" value={formName} onChangeText={setFormName} mode="outlined" style={styles.input} />
+            <TextInput label="생년월일 (YYYY-MM-DD)" value={formDob} onChangeText={setFormDob} mode="outlined" style={styles.input} placeholder="예: 1998-03-17" />
+            <TextInput label="연락처" value={formPhone} onChangeText={setFormPhone} mode="outlined" style={styles.input} keyboardType="phone-pad" placeholder="예: 010-1234-5678" />
+            <TextInput label="주소" value={formAddress} onChangeText={setFormAddress} mode="outlined" style={styles.input} />
+            <TextInput label="메모" value={formNotes} onChangeText={setFormNotes} mode="outlined" style={styles.input} multiline numberOfLines={3} placeholder="특이사항, 방문 경위 등" />
+
+            <Text style={styles.fieldLabel}>소속 제자반 (나중에 배정 가능)</Text>
+            <View style={styles.classSelector}>
+              <Button
+                mode={formClassId === '' ? 'contained' : 'outlined'}
+                onPress={() => setFormClassId('')}
+                compact style={styles.classButton}
+              >
+                미배정
+              </Button>
+              {classes.filter((c) => c.is_active).map((c) => (
+                <Button
+                  key={c.id}
+                  mode={formClassId === c.id ? 'contained' : 'outlined'}
+                  onPress={() => setFormClassId(c.id)}
+                  compact style={styles.classButton}
+                >
+                  {c.name}
+                </Button>
+              ))}
+            </View>
+
+            <Button mode="contained" onPress={handleAddMember} style={styles.submitBtn} contentStyle={{ paddingVertical: 6 }}
+              icon="account-plus"
+            >
+              새가족 등록
+            </Button>
+          </Card.Content>
+        </Card>
+      </ScrollView>
+    );
+  }
+
+  // ============ 회원 관리 (목록) ============
   if (section === 'members') {
     const activeMembers = members.filter((m) => m.is_active);
     return (
@@ -156,7 +268,7 @@ export default function AdminScreen() {
         <View style={styles.sectionHeader}>
           <Button icon="arrow-left" onPress={() => setSection('menu')}>뒤로</Button>
           <Text style={styles.sectionTitle}>회원 관리 ({activeMembers.length}명)</Text>
-          <Button icon="plus" mode="contained" onPress={() => setSection('addMember')} compact>추가</Button>
+          <Button icon="plus" mode="contained" onPress={() => { resetForm(); setSection('addMember'); }} compact>추가</Button>
         </View>
         {activeMembers.map((m) => {
           const cls = classes.find((c) => c.id === m.class_id);
@@ -167,9 +279,11 @@ export default function AdminScreen() {
                   <Text style={styles.memberName}>{m.name}</Text>
                   <Text style={styles.memberDetail}>
                     {cls?.name || '미배정'} {m.phone ? `| ${m.phone}` : ''}
+                    {m.date_of_birth ? ` | ${calculateAge(m.date_of_birth)}세` : ''}
                   </Text>
                 </View>
-                <IconButton icon="delete" iconColor={COLORS.danger} onPress={() => handleDeleteMember(m.id, m.name)} />
+                <IconButton icon="pencil" iconColor={COLORS.primary} onPress={() => openEditMember(m.id)} size={20} />
+                <IconButton icon="delete" iconColor={COLORS.danger} onPress={() => handleDeleteMember(m.id, m.name)} size={20} />
               </Card.Content>
             </Card>
           );
@@ -179,33 +293,29 @@ export default function AdminScreen() {
     );
   }
 
-  // 회원 추가
+  // ============ 회원 추가 ============
   if (section === 'addMember') {
     return (
       <ScrollView style={styles.container}>
         <View style={styles.sectionHeader}>
-          <Button icon="arrow-left" onPress={() => setSection('members')}>뒤로</Button>
+          <Button icon="arrow-left" onPress={() => { resetForm(); setSection('members'); }}>뒤로</Button>
           <Text style={styles.sectionTitle}>회원 추가</Text>
           <View style={{ width: 80 }} />
         </View>
         <Card style={styles.card}>
           <Card.Content>
-            <TextInput label="이름 *" value={newName} onChangeText={setNewName} mode="outlined" style={styles.input} />
-            <TextInput label="생년월일 (YYYY-MM-DD)" value={newDob} onChangeText={setNewDob} mode="outlined" style={styles.input} />
-            <TextInput label="연락처" value={newPhone} onChangeText={setNewPhone} mode="outlined" style={styles.input} keyboardType="phone-pad" />
+            <TextInput label="이름 *" value={formName} onChangeText={setFormName} mode="outlined" style={styles.input} />
+            <TextInput label="생년월일 (YYYY-MM-DD)" value={formDob} onChangeText={setFormDob} mode="outlined" style={styles.input} />
+            <TextInput label="연락처" value={formPhone} onChangeText={setFormPhone} mode="outlined" style={styles.input} keyboardType="phone-pad" />
+            <TextInput label="주소" value={formAddress} onChangeText={setFormAddress} mode="outlined" style={styles.input} />
+            <TextInput label="메모" value={formNotes} onChangeText={setFormNotes} mode="outlined" style={styles.input} multiline />
 
             <Text style={styles.fieldLabel}>소속 제자반</Text>
             <View style={styles.classSelector}>
               {classes.filter((c) => c.is_active).map((c) => (
-                <Button
-                  key={c.id}
-                  mode={newClassId === c.id ? 'contained' : 'outlined'}
-                  onPress={() => setNewClassId(newClassId === c.id ? '' : c.id)}
-                  compact
-                  style={styles.classButton}
-                >
-                  {c.name}
-                </Button>
+                <Button key={c.id} mode={formClassId === c.id ? 'contained' : 'outlined'}
+                  onPress={() => setFormClassId(formClassId === c.id ? '' : c.id)} compact style={styles.classButton}
+                >{c.name}</Button>
               ))}
             </View>
 
@@ -218,7 +328,47 @@ export default function AdminScreen() {
     );
   }
 
-  // 제자반 관리
+  // ============ 회원 정보 수정 ============
+  if (section === 'editMember') {
+    return (
+      <ScrollView style={styles.container}>
+        <View style={styles.sectionHeader}>
+          <Button icon="arrow-left" onPress={() => { resetForm(); setSection('members'); }}>뒤로</Button>
+          <Text style={styles.sectionTitle}>정보 수정</Text>
+          <View style={{ width: 80 }} />
+        </View>
+        <Card style={styles.card}>
+          <Card.Content>
+            <TextInput label="이름 *" value={formName} onChangeText={setFormName} mode="outlined" style={styles.input} />
+            <TextInput label="생년월일 (YYYY-MM-DD)" value={formDob} onChangeText={setFormDob} mode="outlined" style={styles.input} />
+            <TextInput label="연락처" value={formPhone} onChangeText={setFormPhone} mode="outlined" style={styles.input} keyboardType="phone-pad" />
+            <TextInput label="주소" value={formAddress} onChangeText={setFormAddress} mode="outlined" style={styles.input} />
+            <TextInput label="메모" value={formNotes} onChangeText={setFormNotes} mode="outlined" style={styles.input} multiline numberOfLines={3} />
+
+            <Text style={styles.fieldLabel}>소속 제자반</Text>
+            <View style={styles.classSelector}>
+              <Button mode={formClassId === '' ? 'contained' : 'outlined'}
+                onPress={() => setFormClassId('')} compact style={styles.classButton}
+              >미배정</Button>
+              {classes.filter((c) => c.is_active).map((c) => (
+                <Button key={c.id} mode={formClassId === c.id ? 'contained' : 'outlined'}
+                  onPress={() => setFormClassId(c.id)} compact style={styles.classButton}
+                >{c.name}</Button>
+              ))}
+            </View>
+
+            <Button mode="contained" onPress={handleUpdateMember} style={styles.submitBtn} contentStyle={{ paddingVertical: 6 }}
+              icon="content-save"
+            >
+              저장
+            </Button>
+          </Card.Content>
+        </Card>
+      </ScrollView>
+    );
+  }
+
+  // ============ 제자반 관리 ============
   if (section === 'classes') {
     const activeClasses = classes.filter((c) => c.is_active);
     return (
@@ -247,7 +397,7 @@ export default function AdminScreen() {
     );
   }
 
-  // 제자반 추가
+  // ============ 제자반 추가 ============
   if (section === 'addClass') {
     return (
       <ScrollView style={styles.container}>
@@ -265,6 +415,120 @@ export default function AdminScreen() {
             </Button>
           </Card.Content>
         </Card>
+      </ScrollView>
+    );
+  }
+
+  // ============ 계정 관리 ============
+  if (section === 'accounts') {
+    return (
+      <ScrollView style={styles.container}>
+        <View style={styles.sectionHeader}>
+          <Button icon="arrow-left" onPress={() => setSection('menu')}>뒤로</Button>
+          <Text style={styles.sectionTitle}>계정 관리</Text>
+          <View style={{ width: 80 }} />
+        </View>
+        <Card style={styles.card}>
+          <Card.Title title="새 계정 생성" />
+          <Card.Content>
+            <TextInput label="이메일 *" value={accountEmail} onChangeText={setAccountEmail} mode="outlined" style={styles.input} keyboardType="email-address" />
+            <TextInput label="이름 *" value={accountName} onChangeText={setAccountName} mode="outlined" style={styles.input} />
+            <Text style={styles.fieldLabel}>역할</Text>
+            <View style={styles.classSelector}>
+              {(['member', 'instructor', 'admin'] as const).map((role) => (
+                <Button key={role} mode={accountRole === role ? 'contained' : 'outlined'}
+                  onPress={() => setAccountRole(role)} compact style={styles.classButton}
+                  buttonColor={accountRole === role ? ROLES[role].color : undefined}
+                >{ROLES[role].label}</Button>
+              ))}
+            </View>
+            {accountRole === 'instructor' && (
+              <>
+                <Text style={styles.fieldLabel}>담당 제자반</Text>
+                <View style={styles.classSelector}>
+                  {classes.filter((c) => c.is_active).map((c) => (
+                    <Chip key={c.id} style={styles.classButton}>{c.name}</Chip>
+                  ))}
+                </View>
+              </>
+            )}
+            <Button mode="contained" onPress={handleCreateAccount} style={styles.submitBtn} contentStyle={{ paddingVertical: 6 }}
+              icon="account-plus"
+            >
+              계정 생성
+            </Button>
+          </Card.Content>
+        </Card>
+
+        <Card style={styles.card}>
+          <Card.Title title="기존 계정 목록" />
+          <Card.Content>
+            <Text style={styles.emptyText}>Supabase 연동 후 실제 계정 목록이 표시됩니다</Text>
+          </Card.Content>
+        </Card>
+        <View style={{ height: 24 }} />
+      </ScrollView>
+    );
+  }
+
+  // ============ 알림 설정 ============
+  if (section === 'notifications') {
+    const days = ['일', '월', '화', '수', '목', '금', '토'];
+    return (
+      <ScrollView style={styles.container}>
+        <View style={styles.sectionHeader}>
+          <Button icon="arrow-left" onPress={() => setSection('menu')}>뒤로</Button>
+          <Text style={styles.sectionTitle}>알림 설정</Text>
+          <View style={{ width: 80 }} />
+        </View>
+
+        <Card style={styles.card}>
+          <Card.Title title="자동 알림 (기본 설정)" />
+          <Card.Content>
+            <View style={styles.notiRow}>
+              <Chip icon="cake-variant" compact>생일 알림</Chip>
+              <Text style={styles.notiDesc}>매일 오전 9시 | 담당 강사에게</Text>
+            </View>
+            <Divider style={{ marginVertical: 8 }} />
+            <View style={styles.notiRow}>
+              <Chip icon="church" compact>출석 체크 알림</Chip>
+              <Text style={styles.notiDesc}>매주 일요일 19시 | 전체 강사에게</Text>
+            </View>
+          </Card.Content>
+        </Card>
+
+        <Card style={styles.card}>
+          <Card.Title title="커스텀 알림 추가" />
+          <Card.Content>
+            <TextInput label="알림 제목 *" value={notiTitle} onChangeText={setNotiTitle} mode="outlined" style={styles.input} />
+            <TextInput label="알림 내용 *" value={notiBody} onChangeText={setNotiBody} mode="outlined" style={styles.input} multiline />
+
+            <Text style={styles.fieldLabel}>요일</Text>
+            <View style={styles.classSelector}>
+              {days.map((d, i) => (
+                <Button key={i} mode={notiDay === String(i) ? 'contained' : 'outlined'}
+                  onPress={() => setNotiDay(String(i))} compact style={styles.classButton}
+                >{d}</Button>
+              ))}
+            </View>
+
+            <Text style={styles.fieldLabel}>시간</Text>
+            <View style={styles.classSelector}>
+              {['7', '9', '12', '18', '19', '20', '21'].map((h) => (
+                <Button key={h} mode={notiHour === h ? 'contained' : 'outlined'}
+                  onPress={() => setNotiHour(h)} compact style={styles.classButton}
+                >{h}시</Button>
+              ))}
+            </View>
+
+            <Button mode="contained" onPress={handleSaveNotification} style={styles.submitBtn}
+              contentStyle={{ paddingVertical: 6 }} icon="bell-plus"
+            >
+              알림 저장
+            </Button>
+          </Card.Content>
+        </Card>
+        <View style={{ height: 24 }} />
       </ScrollView>
     );
   }
@@ -287,8 +551,11 @@ const styles = StyleSheet.create({
   memberName: { fontSize: 16, fontWeight: '600', color: COLORS.text },
   memberDetail: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
   input: { marginBottom: 12 },
-  fieldLabel: { fontSize: 14, color: COLORS.textSecondary, marginBottom: 8 },
+  fieldLabel: { fontSize: 14, color: COLORS.textSecondary, marginBottom: 8, marginTop: 4 },
   classSelector: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
   classButton: { borderRadius: 8 },
   submitBtn: { marginTop: 8, borderRadius: 12 },
+  emptyText: { color: COLORS.textSecondary, textAlign: 'center', paddingVertical: 12 },
+  notiRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  notiDesc: { fontSize: 12, color: COLORS.textSecondary },
 });
