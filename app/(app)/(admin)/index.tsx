@@ -34,17 +34,11 @@ export default function AdminScreen() {
   const [newClassDesc, setNewClassDesc] = useState('');
 
   // 계정 관리 폼
-  const createAccount = useAuthStore((s) => s.createAccount);
-  const getAccounts = useAuthStore((s) => s.getAccounts);
-  const deleteAccountFn = useAuthStore((s) => s.deleteAccount);
-  const updateAccountClasses = useAuthStore((s) => s.updateAccountClasses);
+  const createInstructorAccount = useAuthStore((s) => s.createInstructorAccount);
   const [accountEmail, setAccountEmail] = useState('');
   const [accountPassword, setAccountPassword] = useState('');
   const [accountName, setAccountName] = useState('');
-  const [accountRole, setAccountRole] = useState('instructor');
   const [accountClassIds, setAccountClassIds] = useState<string[]>([]);
-  const [editingAccountEmail, setEditingAccountEmail] = useState<string | null>(null);
-  const [editClassIds, setEditClassIds] = useState<string[]>([]);
 
   // 알림 설정 폼
   const [notiTitle, setNotiTitle] = useState('');
@@ -142,38 +136,28 @@ export default function AdminScreen() {
     );
   };
 
-  const handleCreateAccount = () => {
+  const handleCreateAccount = async () => {
     if (!accountEmail.trim() || !accountName.trim() || !accountPassword.trim()) {
       Alert.alert('알림', '이메일, 비밀번호, 이름을 모두 입력해주세요.');
       return;
     }
-    if (accountRole === 'instructor' && accountClassIds.length === 0) {
-      Alert.alert('알림', '강사 계정은 담당 제자반을 1개 이상 선택해주세요.');
+    if (accountClassIds.length === 0) {
+      Alert.alert('알림', '담당 제자반을 1개 이상 선택해주세요.');
       return;
     }
     const classNames = accountClassIds.map((id) => classes.find((c) => c.id === id)?.name).join(', ');
-    const success = createAccount(
+    const result = await createInstructorAccount(
       accountEmail.trim(),
       accountPassword,
       accountName.trim(),
-      accountRole as any,
-      accountClassIds.length > 0 ? accountClassIds : undefined,
+      accountClassIds,
     );
-    if (!success) {
-      Alert.alert('오류', '이미 존재하는 이메일입니다.');
+    if (!result.success) {
+      Alert.alert('오류', result.error || '계정 생성에 실패했습니다.');
       return;
     }
-    Alert.alert('완료', `${accountName} 계정이 생성되었습니다.\n\n이메일: ${accountEmail}\n비밀번호: ${accountPassword}\n역할: ${ROLES[accountRole as keyof typeof ROLES]?.label}${classNames ? `\n담당반: ${classNames}` : ''}`);
-    setAccountEmail(''); setAccountPassword(''); setAccountName(''); setAccountRole('instructor'); setAccountClassIds([]);
-  };
-
-  const handleSaveEditClasses = () => {
-    if (!editingAccountEmail) return;
-    updateAccountClasses(editingAccountEmail, editClassIds);
-    const acc = getAccounts().find((a) => a.email === editingAccountEmail);
-    Alert.alert('완료', `${acc?.profile.display_name}의 담당 제자반이 변경되었습니다.`);
-    setEditingAccountEmail(null);
-    setEditClassIds([]);
+    Alert.alert('완료', `${accountName} 강사 계정이 생성되었습니다.\n\n이메일: ${accountEmail}\n담당반: ${classNames}\n\n* 이메일 인증 후 로그인 가능합니다.`);
+    setAccountEmail(''); setAccountPassword(''); setAccountName(''); setAccountClassIds([]);
   };
 
   const handleSaveNotification = () => {
@@ -466,130 +450,43 @@ export default function AdminScreen() {
 
   // ============ 계정 관리 ============
   if (section === 'accounts') {
-    const allAccounts = getAccounts();
-
-    // 담당반 편집 모드
-    if (editingAccountEmail) {
-      const editAcc = allAccounts.find((a) => a.email === editingAccountEmail);
-      return (
-        <ScrollView style={styles.container}>
-          <View style={styles.sectionHeader}>
-            <Button icon="arrow-left" onPress={() => { setEditingAccountEmail(null); setEditClassIds([]); }}>뒤로</Button>
-            <Text style={styles.sectionTitle}>담당반 변경</Text>
-            <View style={{ width: 80 }} />
-          </View>
-          <Card style={styles.card}>
-            <Card.Content>
-              <Text style={styles.memberName}>{editAcc?.profile.display_name}</Text>
-              <Text style={[styles.memberDetail, { marginBottom: 16 }]}>{editAcc?.email}</Text>
-
-              <Text style={styles.fieldLabel}>담당 제자반 (복수 선택 가능)</Text>
-              <View style={styles.classSelector}>
-                {classes.filter((c) => c.is_active).map((c) => (
-                  <Button key={c.id} mode={editClassIds.includes(c.id) ? 'contained' : 'outlined'}
-                    onPress={() => toggleEditClass(c.id)} compact style={styles.classButton}
-                  >{c.name}</Button>
-                ))}
-              </View>
-
-              <Button mode="contained" onPress={handleSaveEditClasses} style={styles.submitBtn}
-                contentStyle={{ paddingVertical: 6 }} icon="content-save"
-              >
-                저장
-              </Button>
-            </Card.Content>
-          </Card>
-        </ScrollView>
-      );
-    }
-
     return (
       <ScrollView style={styles.container}>
         <View style={styles.sectionHeader}>
           <Button icon="arrow-left" onPress={() => setSection('menu')}>뒤로</Button>
-          <Text style={styles.sectionTitle}>계정 관리</Text>
+          <Text style={styles.sectionTitle}>강사 계정 생성</Text>
           <View style={{ width: 80 }} />
         </View>
         <Card style={styles.card}>
-          <Card.Title title="새 계정 생성" />
+          <Card.Title title="새 강사 계정" />
           <Card.Content>
             <TextInput label="이메일 *" value={accountEmail} onChangeText={setAccountEmail} mode="outlined" style={styles.input} keyboardType="email-address" autoCapitalize="none" />
             <TextInput label="비밀번호 *" value={accountPassword} onChangeText={setAccountPassword} mode="outlined" style={styles.input} />
             <TextInput label="이름 *" value={accountName} onChangeText={setAccountName} mode="outlined" style={styles.input} />
-            <Text style={styles.fieldLabel}>역할</Text>
+
+            <Text style={styles.fieldLabel}>담당 제자반 (복수 선택 가능)</Text>
             <View style={styles.classSelector}>
-              {(['instructor', 'admin'] as const).map((role) => (
-                <Button key={role} mode={accountRole === role ? 'contained' : 'outlined'}
-                  onPress={() => setAccountRole(role)} compact style={styles.classButton}
-                  buttonColor={accountRole === role ? ROLES[role].color : undefined}
-                >{ROLES[role].label}</Button>
+              {classes.filter((c) => c.is_active).map((c) => (
+                <Button key={c.id} mode={accountClassIds.includes(c.id) ? 'contained' : 'outlined'}
+                  onPress={() => toggleAccountClass(c.id)} compact style={styles.classButton}
+                >{c.name}</Button>
               ))}
             </View>
-            {accountRole === 'instructor' && (
-              <>
-                <Text style={styles.fieldLabel}>담당 제자반 (복수 선택 가능)</Text>
-                <View style={styles.classSelector}>
-                  {classes.filter((c) => c.is_active).map((c) => (
-                    <Button key={c.id} mode={accountClassIds.includes(c.id) ? 'contained' : 'outlined'}
-                      onPress={() => toggleAccountClass(c.id)} compact style={styles.classButton}
-                    >{c.name}</Button>
-                  ))}
-                </View>
-                {accountClassIds.length > 0 && (
-                  <Text style={{ fontSize: 12, color: COLORS.success, marginBottom: 8 }}>
-                    선택됨: {accountClassIds.map((id) => classes.find((c) => c.id === id)?.name).join(', ')}
-                  </Text>
-                )}
-              </>
+            {accountClassIds.length > 0 && (
+              <Text style={{ fontSize: 12, color: COLORS.success, marginBottom: 8 }}>
+                선택됨: {accountClassIds.map((id) => classes.find((c) => c.id === id)?.name).join(', ')}
+              </Text>
             )}
+
             <Button mode="contained" onPress={handleCreateAccount} style={styles.submitBtn} contentStyle={{ paddingVertical: 6 }}
               icon="account-plus"
             >
-              계정 생성
+              강사 계정 생성
             </Button>
-          </Card.Content>
-        </Card>
 
-        <Card style={styles.card}>
-          <Card.Title title={`계정 목록 (${allAccounts.length}개)`} />
-          <Card.Content>
-            {allAccounts.map((acc) => {
-              const classIds: string[] = (acc.profile as any).assigned_class_ids || [];
-              const classNames = classIds.map((id: string) => classes.find((c) => c.id === id)?.name).filter(Boolean).join(', ');
-              return (
-                <View key={acc.email} style={styles.accountRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.memberName}>{acc.profile.display_name}</Text>
-                    <Text style={styles.memberDetail}>
-                      {acc.email} | {ROLES[acc.profile.role].label}
-                    </Text>
-                    {acc.profile.role === 'instructor' && (
-                      <Text style={{ fontSize: 11, color: COLORS.primary }}>
-                        담당: {classNames || '미배정'}
-                      </Text>
-                    )}
-                  </View>
-                  {acc.profile.role === 'instructor' && (
-                    <IconButton icon="pencil" iconColor={COLORS.primary} size={20}
-                      onPress={() => {
-                        setEditingAccountEmail(acc.email);
-                        setEditClassIds([...classIds]);
-                      }}
-                    />
-                  )}
-                  {acc.profile.role !== 'admin' && (
-                    <IconButton icon="delete" iconColor={COLORS.danger} size={20}
-                      onPress={() => {
-                        Alert.alert('삭제', `${acc.profile.display_name} 계정을 삭제하시겠습니까?`, [
-                          { text: '취소', style: 'cancel' },
-                          { text: '삭제', style: 'destructive', onPress: () => deleteAccountFn(acc.email) },
-                        ]);
-                      }}
-                    />
-                  )}
-                </View>
-              );
-            })}
+            <Text style={{ fontSize: 11, color: COLORS.textSecondary, marginTop: 12, textAlign: 'center' }}>
+              * 생성된 계정은 이메일 인증 후 로그인 가능합니다
+            </Text>
           </Card.Content>
         </Card>
         <View style={{ height: 24 }} />

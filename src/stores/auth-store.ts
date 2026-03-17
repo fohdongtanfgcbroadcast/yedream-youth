@@ -1,36 +1,13 @@
 import { create } from 'zustand';
+import { supabase } from '../lib/supabase';
 import { Profile, UserRole } from '../types';
 
-interface Account {
-  email: string;
-  password: string;
-  profile: Profile & { assigned_class_ids?: string[] };
+interface ExtendedProfile extends Profile {
+  assigned_class_ids?: string[];
 }
 
-// 기본 계정 목록
-const DEFAULT_ACCOUNTS: Account[] = [
-  {
-    email: 'admin@yedream.com',
-    password: 'admin123',
-    profile: {
-      id: 'admin-001', role: 'admin', display_name: '김관리',
-      phone: '010-1234-5678', created_at: '2024-01-01', updated_at: '2024-01-01',
-    },
-  },
-  {
-    email: 'instructor@yedream.com',
-    password: '1234',
-    profile: {
-      id: 'instructor-001', role: 'instructor', display_name: '박강사',
-      phone: '010-2345-6789', assigned_class_ids: ['c1', 'c2'],
-      created_at: '2024-01-01', updated_at: '2024-01-01',
-    },
-  },
-];
-
 interface AuthState {
-  profile: (Profile & { assigned_class_ids?: string[] }) | null;
-  accounts: Account[];
+  profile: ExtendedProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   loginError: string | null;
@@ -39,85 +16,101 @@ interface AuthState {
   isAdmin: () => boolean;
   isInstructor: () => boolean;
   getAssignedClassIds: () => string[];
-  createAccount: (email: string, password: string, displayName: string, role: UserRole, assignedClassIds?: string[]) => boolean;
-  updateAccountClasses: (email: string, classIds: string[]) => void;
-  getAccounts: () => Account[];
-  deleteAccount: (email: string) => void;
+  loadProfile: () => Promise<void>;
+  createInstructorAccount: (email: string, password: string, displayName: string, assignedClassIds: string[]) => Promise<{ success: boolean; error?: string }>;
 }
-
-let accountNextId = 200;
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   profile: null,
-  accounts: [...DEFAULT_ACCOUNTS],
   isAuthenticated: false,
   isLoading: false,
   loginError: null,
 
   login: async (email: string, password: string) => {
     set({ isLoading: true, loginError: null });
-    await new Promise((r) => setTimeout(r, 300));
 
-    const account = get().accounts.find(
-      (a) => a.email.toLowerCase() === email.toLowerCase() && a.password === password
-    );
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (!account) {
+    if (error || !data.user) {
       set({ isLoading: false, loginError: '이메일 또는 비밀번호가 올바르지 않습니다.' });
       return false;
     }
 
-    set({ profile: account.profile, isAuthenticated: true, isLoading: false, loginError: null });
+    // profiles 테이블에서 프로필 조회
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .single();
+
+    if (profileError || !profileData) {
+      set({ isLoading: false, loginError: '프로필 정보를 찾을 수 없습니다. 관리자에게 문의하세요.' });
+      return false;
+    }
+
+    set({
+      profile: profileData as ExtendedProfile,
+      isAuthenticated: true,
+      isLoading: false,
+      loginError: null,
+    });
     return true;
   },
 
-  logout: () => {
+  logout: async () => {
+    await supabase.auth.signOut();
     set({ profile: null, isAuthenticated: false, loginError: null });
   },
 
   isAdmin: () => get().profile?.role === 'admin',
   isInstructor: () => get().profile?.role === 'instructor' || get().profile?.role === 'admin',
-  getAssignedClassIds: () => (get().profile as any)?.assigned_class_ids || [],
+  getAssignedClassIds: () => get().profile?.assigned_class_ids || [],
 
-  createAccount: (email, password, displayName, role, assignedClassIds) => {
-    const exists = get().accounts.find((a) => a.email.toLowerCase() === email.toLowerCase());
-    if (exists) return false;
+  loadProfile: async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-    const newAccount: Account = {
-      email,
-      password,
-      profile: {
-        id: `user-${accountNextId++}`,
-        role,
-        display_name: displayName,
-        assigned_class_ids: role === 'instructor' ? (assignedClassIds || []) : undefined,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    };
-    set((s) => ({ accounts: [...s.accounts, newAccount] }));
-    return true;
-  },
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
 
-  updateAccountClasses: (email, classIds) => {
-    set((s) => ({
-      accounts: s.accounts.map((a) =>
-        a.email === email
-          ? { ...a, profile: { ...a.profile, assigned_class_ids: classIds } }
-          : a
-      ),
-    }));
-    // 현재 로그인한 사용자의 반 배정도 갱신
-    const current = get().profile;
-    const account = get().accounts.find((a) => a.email === email);
-    if (current && account && current.id === account.profile.id) {
-      set({ profile: { ...current, assigned_class_ids: classIds } });
+    if (profileData) {
+      set({
+        profile: profileData as ExtendedProfile,
+        isAuthenticated: true,
+      });
     }
   },
 
-  getAccounts: () => get().accounts,
+  // 강사 계정 생성 (관리자 전용) - Supabase Auth로 가입 후 profiles에 등록
+  createInstructorAccount: async (email, password, displayName, assignedClassIds) => {
+    // 새 사용자 가입
+    const { data, error } = await supabase.auth.signUp({ email, password });
 
-  deleteAccount: (email) => {
-    set((s) => ({ accounts: s.accounts.filter((a) => a.email !== email) }));
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    if (!data.user) {
+      return { success: false, error: '계정 생성에 실패했습니다.' };
+    }
+
+    // profiles 테이블에 등록
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: data.user.id,
+        role: 'instructor',
+        display_name: displayName,
+        assigned_class_ids: assignedClassIds,
+      });
+
+    if (profileError) {
+      return { success: false, error: profileError.message };
+    }
+
+    return { success: true };
   },
 }));

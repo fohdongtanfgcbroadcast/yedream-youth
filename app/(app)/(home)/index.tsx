@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { Text, Card, Button, Chip, Avatar } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../src/stores/auth-store';
@@ -11,6 +11,11 @@ export default function HomeScreen() {
   const router = useRouter();
   const profile = useAuthStore((s) => s.profile);
   const isAdmin = useAuthStore((s) => s.isAdmin)();
+  const loadAll = useDataStore((s) => s.loadAll);
+  const isLoading = useDataStore((s) => s.isLoading);
+
+  // 앱 진입 시 DB에서 전체 데이터 로드
+  useEffect(() => { loadAll(); }, []);
   const todaySummary = useDataStore((s) => s.getTodayAttendanceSummary)();
   const birthdayMembers = useDataStore((s) => s.getBirthdayMembers)();
   const members = useDataStore((s) => s.members);
