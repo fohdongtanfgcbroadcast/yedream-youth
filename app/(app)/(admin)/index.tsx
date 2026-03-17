@@ -34,9 +34,14 @@ export default function AdminScreen() {
   const [newClassDesc, setNewClassDesc] = useState('');
 
   // 계정 관리 폼
+  const createAccount = useAuthStore((s) => s.createAccount);
+  const getAccounts = useAuthStore((s) => s.getAccounts);
+  const deleteAccountFn = useAuthStore((s) => s.deleteAccount);
   const [accountEmail, setAccountEmail] = useState('');
+  const [accountPassword, setAccountPassword] = useState('');
   const [accountName, setAccountName] = useState('');
   const [accountRole, setAccountRole] = useState('member');
+  const [accountClassId, setAccountClassId] = useState('');
 
   // 알림 설정 폼
   const [notiTitle, setNotiTitle] = useState('');
@@ -123,12 +128,23 @@ export default function AdminScreen() {
   };
 
   const handleCreateAccount = () => {
-    if (!accountEmail.trim() || !accountName.trim()) {
-      Alert.alert('알림', '이메일과 이름을 입력해주세요.');
+    if (!accountEmail.trim() || !accountName.trim() || !accountPassword.trim()) {
+      Alert.alert('알림', '이메일, 비밀번호, 이름을 모두 입력해주세요.');
       return;
     }
-    Alert.alert('완료', `${accountName} (${accountEmail}) 계정이 생성되었습니다.\n역할: ${ROLES[accountRole as keyof typeof ROLES]?.label}\n\n* 실제 Supabase 연동 시 이메일로 초대가 발송됩니다.`);
-    setAccountEmail(''); setAccountName(''); setAccountRole('member');
+    const success = createAccount(
+      accountEmail.trim(),
+      accountPassword,
+      accountName.trim(),
+      accountRole as any,
+      accountClassId || undefined,
+    );
+    if (!success) {
+      Alert.alert('오류', '이미 존재하는 이메일입니다.');
+      return;
+    }
+    Alert.alert('완료', `${accountName} 계정이 생성되었습니다.\n\n이메일: ${accountEmail}\n비밀번호: ${accountPassword}\n역할: ${ROLES[accountRole as keyof typeof ROLES]?.label}`);
+    setAccountEmail(''); setAccountPassword(''); setAccountName(''); setAccountRole('member'); setAccountClassId('');
   };
 
   const handleSaveNotification = () => {
@@ -421,6 +437,7 @@ export default function AdminScreen() {
 
   // ============ 계정 관리 ============
   if (section === 'accounts') {
+    const allAccounts = getAccounts();
     return (
       <ScrollView style={styles.container}>
         <View style={styles.sectionHeader}>
@@ -431,11 +448,12 @@ export default function AdminScreen() {
         <Card style={styles.card}>
           <Card.Title title="새 계정 생성" />
           <Card.Content>
-            <TextInput label="이메일 *" value={accountEmail} onChangeText={setAccountEmail} mode="outlined" style={styles.input} keyboardType="email-address" />
+            <TextInput label="이메일 *" value={accountEmail} onChangeText={setAccountEmail} mode="outlined" style={styles.input} keyboardType="email-address" autoCapitalize="none" />
+            <TextInput label="비밀번호 *" value={accountPassword} onChangeText={setAccountPassword} mode="outlined" style={styles.input} />
             <TextInput label="이름 *" value={accountName} onChangeText={setAccountName} mode="outlined" style={styles.input} />
             <Text style={styles.fieldLabel}>역할</Text>
             <View style={styles.classSelector}>
-              {(['member', 'instructor', 'admin'] as const).map((role) => (
+              {(['instructor', 'admin'] as const).map((role) => (
                 <Button key={role} mode={accountRole === role ? 'contained' : 'outlined'}
                   onPress={() => setAccountRole(role)} compact style={styles.classButton}
                   buttonColor={accountRole === role ? ROLES[role].color : undefined}
@@ -447,7 +465,10 @@ export default function AdminScreen() {
                 <Text style={styles.fieldLabel}>담당 제자반</Text>
                 <View style={styles.classSelector}>
                   {classes.filter((c) => c.is_active).map((c) => (
-                    <Chip key={c.id} style={styles.classButton}>{c.name}</Chip>
+                    <Button key={c.id} mode={accountClassId === c.id ? 'contained' : 'outlined'}
+                      onPress={() => setAccountClassId(accountClassId === c.id ? '' : c.id)}
+                      compact style={styles.classButton}
+                    >{c.name}</Button>
                   ))}
                 </View>
               </>
@@ -461,9 +482,28 @@ export default function AdminScreen() {
         </Card>
 
         <Card style={styles.card}>
-          <Card.Title title="기존 계정 목록" />
+          <Card.Title title={`기존 계정 목록 (${allAccounts.length}개)`} />
           <Card.Content>
-            <Text style={styles.emptyText}>Supabase 연동 후 실제 계정 목록이 표시됩니다</Text>
+            {allAccounts.map((acc) => (
+              <View key={acc.email} style={styles.accountRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.memberName}>{acc.profile.display_name}</Text>
+                  <Text style={styles.memberDetail}>
+                    {acc.email} | {ROLES[acc.profile.role].label}
+                  </Text>
+                </View>
+                {acc.profile.role !== 'admin' && (
+                  <IconButton icon="delete" iconColor={COLORS.danger} size={20}
+                    onPress={() => {
+                      Alert.alert('삭제', `${acc.profile.display_name} 계정을 삭제하시겠습니까?`, [
+                        { text: '취소', style: 'cancel' },
+                        { text: '삭제', style: 'destructive', onPress: () => deleteAccountFn(acc.email) },
+                      ]);
+                    }}
+                  />
+                )}
+              </View>
+            ))}
           </Card.Content>
         </Card>
         <View style={{ height: 24 }} />
@@ -558,4 +598,5 @@ const styles = StyleSheet.create({
   emptyText: { color: COLORS.textSecondary, textAlign: 'center', paddingVertical: 12 },
   notiRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   notiDesc: { fontSize: 12, color: COLORS.textSecondary },
+  accountRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
 });

@@ -39,3 +39,53 @@ export function getDayOfWeek(dateStr: string): string {
   const days = ['일', '월', '화', '수', '목', '금', '토'];
   return days[new Date(dateStr).getDay()];
 }
+
+// ============ 주간 날짜 계산 ============
+
+// 특정 날짜가 속한 주의 일요일 구하기
+export function getSundayOfWeek(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay(); // 0=일, 1=월, ..., 6=토
+  d.setDate(d.getDate() - day); // 일요일로 이동
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+// 특정 날짜가 속한 주의 금요일 구하기
+export function getFridayOfWeek(date: Date): Date {
+  const sunday = getSundayOfWeek(date);
+  const friday = new Date(sunday);
+  friday.setDate(friday.getDate() - 2); // 일요일 기준 전주 금요일
+  return friday;
+}
+
+// 날짜를 YYYY-MM-DD 문자열로 변환
+export function toDateString(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+// 해당 주의 철야 날짜 (금요일), 주일예배/제자교육 날짜 (일요일)
+export function getWeekDates(sundayDate: Date): { friday: string; sunday: string } {
+  const friday = new Date(sundayDate);
+  friday.setDate(friday.getDate() - 2); // 일요일 - 2 = 금요일
+  return {
+    friday: toDateString(friday),
+    sunday: toDateString(sundayDate),
+  };
+}
+
+// 주간 이동 (weeks: -1 이전주, +1 다음주)
+export function shiftWeek(sundayDate: Date, weeks: number): Date {
+  const d = new Date(sundayDate);
+  d.setDate(d.getDate() + weeks * 7);
+  return d;
+}
+
+// 주간 표시 문자열 (예: "3/10(금) ~ 3/15(일)")
+export function formatWeekRange(sundayDate: Date): string {
+  const { friday, sunday } = getWeekDates(sundayDate);
+  return `${formatShortDate(friday)}(금) ~ ${formatShortDate(sunday)}(일)`;
+}
