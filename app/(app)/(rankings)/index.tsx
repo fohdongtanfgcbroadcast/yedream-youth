@@ -184,46 +184,129 @@ export default function RankingsScreen() {
             </Card.Content>
           </Card>
 
-          {/* 반별 통계 */}
+          {/* 전체 유형별 비율 그래프 */}
           <Card style={styles.card}>
-            <Card.Title title="반별 출석 점수" />
+            <Card.Title title="출석 유형별 비율" />
             <Card.Content>
-              {classRankings.map((cls) => {
-                const classMembers = members.filter((m) => m.class_id === cls.class_id && m.is_active);
-                const classRecords = attendanceRecords.filter((a) => classMembers.some((m) => m.id === a.member_id));
-                const cholya = classRecords.filter((r) => r.attendance_type === '철야').length;
-                const jeja = classRecords.filter((r) => r.attendance_type === '제자교육').length;
-                const juil = classRecords.filter((r) => r.attendance_type === '주일예배').length;
-
-                return (
-                  <View key={cls.class_id} style={styles.classStatBlock}>
-                    <Text style={styles.classStatName}>{cls.class_name} ({cls.member_count}명)</Text>
-                    <View style={styles.classStatRow}>
-                      <View style={styles.classStatItem}>
-                        <Text style={[styles.classStatNum, { color: '#8E44AD' }]}>{cholya}</Text>
-                        <Text style={styles.classStatLabel}>철야</Text>
+              <View style={styles.pieChart}>
+                {[
+                  { label: '철야', value: totalStats.cholya, color: '#8E44AD' },
+                  { label: '제자교육', value: totalStats.jeja, color: '#2980B9' },
+                  { label: '주일예배', value: totalStats.juil, color: '#27AE60' },
+                ].map((item) => {
+                  const pct = totalStats.total > 0 ? Math.round((item.value / totalStats.total) * 100) : 0;
+                  return (
+                    <View key={item.label} style={styles.pieRow}>
+                      <View style={styles.pieLabelRow}>
+                        <View style={[styles.pieDot, { backgroundColor: item.color }]} />
+                        <Text style={styles.pieLabel}>{item.label}</Text>
+                        <Text style={styles.pieValue}>{item.value}건 ({pct}%)</Text>
                       </View>
-                      <View style={styles.classStatItem}>
-                        <Text style={[styles.classStatNum, { color: '#2980B9' }]}>{jeja}</Text>
-                        <Text style={styles.classStatLabel}>제자교육</Text>
-                      </View>
-                      <View style={styles.classStatItem}>
-                        <Text style={[styles.classStatNum, { color: '#27AE60' }]}>{juil}</Text>
-                        <Text style={styles.classStatLabel}>주일예배</Text>
-                      </View>
-                      <View style={styles.classStatItem}>
-                        <Text style={[styles.classStatNum, { color: COLORS.text }]}>{cls.total_points}</Text>
-                        <Text style={styles.classStatLabel}>합계</Text>
+                      <View style={styles.pieBarBg}>
+                        <View style={[styles.pieBarFill, { width: `${pct}%`, backgroundColor: item.color }]} />
                       </View>
                     </View>
-                    <Divider style={{ marginTop: 8 }} />
-                  </View>
-                );
-              })}
+                  );
+                })}
+              </View>
             </Card.Content>
           </Card>
 
-          {/* 개인별 상세 통계 */}
+          {/* 반별 막대 그래프 */}
+          <Card style={styles.card}>
+            <Card.Title title="반별 출석 점수 비교" />
+            <Card.Content>
+              {(() => {
+                const classData = classRankings.map((cls) => {
+                  const cm = members.filter((m) => m.class_id === cls.class_id && m.is_active);
+                  const cr = attendanceRecords.filter((a) => cm.some((m) => m.id === a.member_id));
+                  return {
+                    name: cls.class_name,
+                    cholya: cr.filter((r) => r.attendance_type === '철야').length,
+                    jeja: cr.filter((r) => r.attendance_type === '제자교육').length,
+                    juil: cr.filter((r) => r.attendance_type === '주일예배').length,
+                    total: cls.total_points,
+                  };
+                });
+                const maxTotal = Math.max(...classData.map((d) => d.total), 1);
+
+                return (
+                  <View>
+                    {/* 범례 */}
+                    <View style={styles.chartLegend}>
+                      <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#8E44AD' }]} /><Text style={styles.legendText}>철야</Text></View>
+                      <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#2980B9' }]} /><Text style={styles.legendText}>제자교육</Text></View>
+                      <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#27AE60' }]} /><Text style={styles.legendText}>주일예배</Text></View>
+                    </View>
+
+                    {classData.map((cls) => (
+                      <View key={cls.name} style={styles.barGroup}>
+                        <Text style={styles.barLabel}>{cls.name}</Text>
+                        {/* 스택 바 */}
+                        <View style={styles.stackBarBg}>
+                          <View style={[styles.stackBarSegment, { width: `${(cls.cholya / maxTotal) * 100}%`, backgroundColor: '#8E44AD' }]} />
+                          <View style={[styles.stackBarSegment, { width: `${(cls.jeja / maxTotal) * 100}%`, backgroundColor: '#2980B9' }]} />
+                          <View style={[styles.stackBarSegment, { width: `${(cls.juil / maxTotal) * 100}%`, backgroundColor: '#27AE60' }]} />
+                        </View>
+                        <Text style={styles.barTotal}>{cls.total}점</Text>
+                      </View>
+                    ))}
+                  </View>
+                );
+              })()}
+            </Card.Content>
+          </Card>
+
+          {/* 개인별 TOP 10 막대 그래프 */}
+          <Card style={styles.card}>
+            <Card.Title title="개인별 출석 TOP 10" />
+            <Card.Content>
+              {(() => {
+                const top10 = individualStats.slice(0, 10);
+                const maxPts = Math.max(...top10.map((d) => d.total), 1);
+
+                return top10.map((item, idx) => (
+                  <View key={item.id} style={styles.barGroup}>
+                    <View style={styles.barLabelRow}>
+                      <Text style={[styles.barRank, idx < 3 && { color: COLORS.secondary, fontWeight: 'bold' }]}>{idx + 1}</Text>
+                      <Text style={styles.barName}>{item.name}</Text>
+                      <Text style={styles.barClassName}>{item.class_name}</Text>
+                    </View>
+                    <View style={styles.stackBarBg}>
+                      <View style={[styles.stackBarSegment, { width: `${(item.cholya / maxPts) * 100}%`, backgroundColor: '#8E44AD' }]} />
+                      <View style={[styles.stackBarSegment, { width: `${(item.jeja / maxPts) * 100}%`, backgroundColor: '#2980B9' }]} />
+                      <View style={[styles.stackBarSegment, { width: `${(item.juil / maxPts) * 100}%`, backgroundColor: '#27AE60' }]} />
+                    </View>
+                    <Text style={styles.barTotal}>{item.total}점</Text>
+                  </View>
+                ));
+              })()}
+            </Card.Content>
+          </Card>
+
+          {/* 반별 출석률 비교 */}
+          <Card style={styles.card}>
+            <Card.Title title="반별 출석률" />
+            <Card.Content>
+              {classRankings.map((cls) => (
+                <View key={cls.class_id} style={styles.barGroup}>
+                  <View style={styles.barLabelRow}>
+                    <Text style={styles.barName}>{cls.class_name}</Text>
+                    <Text style={styles.barClassName}>{cls.attendance_rate}%</Text>
+                  </View>
+                  <View style={styles.stackBarBg}>
+                    <View style={[styles.stackBarSegment, {
+                      width: `${cls.attendance_rate}%`,
+                      backgroundColor: cls.attendance_rate >= 80 ? '#27AE60' : cls.attendance_rate >= 50 ? '#F5A623' : '#E74C3C',
+                      borderRadius: 6,
+                    }]} />
+                  </View>
+                </View>
+              ))}
+            </Card.Content>
+          </Card>
+
+          {/* 개인별 상세 표 */}
           <Card style={styles.card}>
             <Card.Title title="개인별 점수 상세" />
             <Card.Content>
@@ -290,10 +373,28 @@ const styles = StyleSheet.create({
   statNumber: { fontSize: 22, fontWeight: 'bold' },
   statLabel: { fontSize: 11, color: COLORS.textSecondary, marginTop: 4 },
   statSubtext: { textAlign: 'center', color: COLORS.textSecondary, fontSize: 13, marginTop: 12 },
-  classStatBlock: { marginBottom: 8 },
-  classStatName: { fontSize: 15, fontWeight: '600', color: COLORS.primary, marginBottom: 6 },
-  classStatRow: { flexDirection: 'row', gap: 8 },
-  classStatItem: { flex: 1, alignItems: 'center' },
-  classStatNum: { fontSize: 18, fontWeight: 'bold' },
-  classStatLabel: { fontSize: 10, color: COLORS.textSecondary },
+  // 비율 바 차트
+  pieChart: { gap: 12 },
+  pieRow: {},
+  pieLabelRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  pieDot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
+  pieLabel: { fontSize: 13, fontWeight: '600', color: COLORS.text, flex: 1 },
+  pieValue: { fontSize: 13, color: COLORS.textSecondary },
+  pieBarBg: { height: 20, backgroundColor: '#F0F0F0', borderRadius: 10, overflow: 'hidden' },
+  pieBarFill: { height: 20, borderRadius: 10 },
+  // 범례
+  chartLegend: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginBottom: 16 },
+  legendItem: { flexDirection: 'row', alignItems: 'center' },
+  legendDot: { width: 8, height: 8, borderRadius: 4, marginRight: 4 },
+  legendText: { fontSize: 11, color: COLORS.textSecondary },
+  // 막대 그래프
+  barGroup: { marginBottom: 12 },
+  barLabel: { fontSize: 14, fontWeight: '600', color: COLORS.primary, marginBottom: 4 },
+  barLabelRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4, gap: 6 },
+  barRank: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary, width: 20 },
+  barName: { fontSize: 13, fontWeight: '600', color: COLORS.text },
+  barClassName: { fontSize: 11, color: COLORS.textSecondary },
+  barTotal: { fontSize: 12, fontWeight: 'bold', color: COLORS.text, marginTop: 2, textAlign: 'right' },
+  stackBarBg: { height: 24, backgroundColor: '#F0F0F0', borderRadius: 12, overflow: 'hidden', flexDirection: 'row' },
+  stackBarSegment: { height: 24 },
 });
