@@ -1,30 +1,43 @@
 {
   "expo": {
-    "name": "yedream-youth",
+    "name": "예닮드림 청년부",
     "slug": "yedream-youth",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "yedream",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#4A90D9"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yedream.youth"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#4A90D9",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
+      "package": "com.yedream.youth",
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "name": "예닮드림 청년부",
+      "shortName": "예닮드림",
+      "description": "예닮드림 청년부 재적관리 시스템",
+      "lang": "ko",
+      "themeColor": "#4A90D9",
+      "backgroundColor": "#F8F9FA"
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }
