@@ -14,7 +14,7 @@ export default function AttendanceScreen() {
   const profile = useAuthStore((s) => s.profile);
   const isAdmin = useAuthStore((s) => s.isAdmin)();
   const isInstructor = useAuthStore((s) => s.isInstructor)();
-  const assignedClassId = useAuthStore((s) => s.getAssignedClassId)();
+  const assignedClassIds = useAuthStore((s) => s.getAssignedClassIds)();
   const { members, classes, attendanceRecords, addAttendance, removeAttendance, getAttendanceByDateAndType } = useDataStore();
 
   // 주간 기준 일요일
@@ -47,9 +47,9 @@ export default function AttendanceScreen() {
   const visibleClasses = useMemo(() => {
     const active = classes.filter((c) => c.is_active);
     if (isAdmin) return active;
-    if (assignedClassId) return active.filter((c) => c.id === assignedClassId);
+    if (assignedClassIds.length > 0) return active.filter((c) => assignedClassIds.includes(c.id));
     return active;
-  }, [classes, isAdmin, assignedClassId]);
+  }, [classes, isAdmin, assignedClassIds]);
 
   const toggleCheck = (
     memberId: string,
@@ -227,7 +227,7 @@ export default function AttendanceScreen() {
   return (
     <ScrollView style={styles.container}>
       {/* 강사 안내 */}
-      {!isAdmin && assignedClassId && (
+      {!isAdmin && assignedClassIds.length > 0 && (
         <Card style={[styles.card, { backgroundColor: '#E8F4FD' }]}>
           <Card.Content>
             <Text style={{ color: COLORS.primary, fontSize: 13 }}>

@@ -22,7 +22,6 @@ export default function SignIn() {
       Alert.alert('알림', '비밀번호를 입력해주세요.');
       return;
     }
-
     const success = await login(email.trim(), password);
     if (success) {
       router.replace('/(app)/(home)');
@@ -82,43 +81,23 @@ export default function SignIn() {
                 <Text style={styles.roleBadgeText}>관리자</Text>
               </View>
               <View style={styles.accountInfo}>
-                <Text style={styles.accountEmail}>admin@yedream.com</Text>
-                <Text style={styles.accountPw}>비밀번호: admin123</Text>
+                <Text style={styles.accountEmail}>admin@yedream.com / admin123</Text>
               </View>
             </View>
 
             <View style={styles.accountRow}>
               <View style={[styles.roleBadge, { backgroundColor: '#3498DB' }]}>
-                <Text style={styles.roleBadgeText}>1반 강사</Text>
+                <Text style={styles.roleBadgeText}>강사</Text>
               </View>
               <View style={styles.accountInfo}>
-                <Text style={styles.accountEmail}>instructor1@yedream.com</Text>
-                <Text style={styles.accountPw}>비밀번호: 1234</Text>
-              </View>
-            </View>
-
-            <View style={styles.accountRow}>
-              <View style={[styles.roleBadge, { backgroundColor: '#2980B9' }]}>
-                <Text style={styles.roleBadgeText}>2반 강사</Text>
-              </View>
-              <View style={styles.accountInfo}>
-                <Text style={styles.accountEmail}>instructor2@yedream.com</Text>
-                <Text style={styles.accountPw}>비밀번호: 1234</Text>
-              </View>
-            </View>
-
-            <View style={styles.accountRow}>
-              <View style={[styles.roleBadge, { backgroundColor: '#1ABC9C' }]}>
-                <Text style={styles.roleBadgeText}>3반 강사</Text>
-              </View>
-              <View style={styles.accountInfo}>
-                <Text style={styles.accountEmail}>instructor3@yedream.com</Text>
-                <Text style={styles.accountPw}>비밀번호: 1234</Text>
+                <Text style={styles.accountEmail}>instructor@yedream.com / 1234</Text>
+                <Text style={styles.accountPw}>담당: 1반, 2반</Text>
               </View>
             </View>
 
             <Text style={styles.hint}>
-              * 관리자가 새 계정을 생성하면 해당 계정으로도 로그인 가능합니다
+              * 관리자가 계정 관리에서 새 강사 계정을 생성할 수 있습니다{'\n'}
+              * 강사 계정 생성 시 담당 제자반을 여러 개 선택 가능합니다
             </Text>
           </Card.Content>
         </Card>
@@ -139,10 +118,10 @@ const styles = StyleSheet.create({
   buttonContent: { paddingVertical: 6 },
   accountTitle: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 12 },
   accountRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  roleBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, minWidth: 70, alignItems: 'center' },
+  roleBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, minWidth: 56, alignItems: 'center' },
   roleBadgeText: { color: '#FFF', fontSize: 11, fontWeight: '600' },
   accountInfo: { marginLeft: 10 },
   accountEmail: { fontSize: 13, color: COLORS.text, fontWeight: '500' },
   accountPw: { fontSize: 11, color: COLORS.textSecondary },
-  hint: { fontSize: 11, color: COLORS.textSecondary, textAlign: 'center', marginTop: 16 },
+  hint: { fontSize: 11, color: COLORS.textSecondary, textAlign: 'center', marginTop: 16, lineHeight: 18 },
 });
