@@ -128,12 +128,27 @@ export const useDataStore = create<DataState>((set, get) => ({
   },
 
   updateMember: async (id, updates) => {
-    const { error } = await supabase.from('members').update(updates).eq('id', id);
-    if (!error) {
-      set((s) => ({
-        members: s.members.map((m) => (m.id === id ? { ...m, ...updates } : m)),
-      }));
+    // undefined → null 변환, 조인 데이터 제거
+    const cleanUpdates: Record<string, any> = {};
+    const validColumns = ['name', 'date_of_birth', 'phone', 'address', 'notes', 'title', 'family_group_id', 'class_id', 'profile_id', 'is_active'];
+    Object.entries(updates).forEach(([key, value]) => {
+      if (validColumns.includes(key)) {
+        cleanUpdates[key] = value === undefined ? null : value;
+      }
+    });
+
+    const { error } = await supabase
+      .from('members')
+      .update(cleanUpdates)
+      .eq('id', id);
+
+    if (error) {
+      console.error('updateMember error:', error);
+      return;
     }
+
+    // 업데이트 성공 후 전체 멤버 다시 로드
+    await get().loadMembers();
   },
 
   deleteMember: async (id) => {

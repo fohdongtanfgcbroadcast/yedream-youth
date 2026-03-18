@@ -86,9 +86,9 @@ export default function AdminScreen() {
     setSection('members');
   };
 
-  const handleUpdateMember = () => {
+  const handleUpdateMember = async () => {
     if (!editingMemberId || !formName.trim()) { webAlert('이름을 입력해주세요.'); return; }
-    updateMember(editingMemberId, {
+    await updateMember(editingMemberId, {
       name: formName.trim(),
       date_of_birth: formDob || null,
       phone: formPhone || null,
