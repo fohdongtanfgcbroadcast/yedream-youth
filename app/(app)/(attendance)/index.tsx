@@ -50,6 +50,17 @@ export default function AttendanceScreen() {
     ensureInstructorMembers();
   }, []);
 
+  // 기간 선택: 년도 + 상반기/하반기
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentHalf = now.getMonth() < 6 ? 1 : 2;
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [selectedHalf, setSelectedHalf] = useState(currentHalf);
+
+  const periodStart = `${selectedYear}-${selectedHalf === 1 ? '01' : '07'}-01`;
+  const periodEnd = `${selectedYear}-${selectedHalf === 1 ? '06' : '12'}-31`;
+  const periodLabel = `${selectedYear}년 ${selectedHalf === 1 ? '상반기' : '하반기'}`;
+
   // 주간 기준 일요일
   const [currentSunday, setCurrentSunday] = useState(() => getSundayOfWeek(new Date()));
   const [showHistory, setShowHistory] = useState(false);
@@ -85,11 +96,9 @@ export default function AttendanceScreen() {
     return active;
   }, [classes, isAdmin, assignedClassIds]);
 
-  // ============ 출석 기록 미입력 주차 계산 (담당 반 기준) ============
+  // ============ 출석 기록 미입력 주차 계산 (담당 반 + 기간 기준) ============
   const missingWeeks = useMemo(() => {
     const missing: { sunday: Date; fridayStr: string; sundayStr: string; label: string }[] = [];
-    const now = new Date();
-    const thisSunday = getSundayOfWeek(now);
 
     // 내가 볼 반의 멤버 ID 목록
     const myMemberIds = new Set(
@@ -98,12 +107,18 @@ export default function AttendanceScreen() {
         .map((m) => m.id)
     );
 
-    // 최근 8주 확인
-    for (let i = 1; i <= 8; i++) {
-      const sun = shiftWeek(thisSunday, -i);
+    // 기간 내 모든 일요일 순회
+    const pStart = new Date(periodStart);
+    const pEnd = new Date(periodEnd);
+    const todayDate = new Date();
+    // 기간 시작일의 일요일부터
+    let sun = getSundayOfWeek(pStart);
+    // 시작일보다 이전이면 다음 주로
+    if (sun < pStart) sun = shiftWeek(sun, 1);
+
+    while (sun <= pEnd && sun <= todayDate) {
       const dates = getWeekDates(sun);
 
-      // 담당 반 멤버 중 해당 주에 출석 기록이 있는지 확인
       const hasAny = attendanceRecords.some((a) => {
         return myMemberIds.has(a.member_id) &&
           (a.attendance_date === dates.friday || a.attendance_date === dates.sunday);
@@ -111,15 +126,16 @@ export default function AttendanceScreen() {
 
       if (!hasAny) {
         missing.push({
-          sunday: sun,
+          sunday: new Date(sun),
           fridayStr: dates.friday,
           sundayStr: dates.sunday,
           label: formatWeekRange(sun),
         });
       }
+      sun = shiftWeek(sun, 1);
     }
-    return missing;
-  }, [attendanceRecords, members, visibleClasses]);
+    return missing.reverse(); // 최신순
+  }, [attendanceRecords, members, visibleClasses, periodStart, periodEnd]);
 
   const toggleCheck = (
     memberId: string,
@@ -197,12 +213,13 @@ export default function AttendanceScreen() {
 
   const totalNewChecks = checkedCholya.size + checkedJeja.size + checkedJuil.size;
 
-  // 출석 이력
+  // 출석 이력 (선택된 기간 내)
   const recentRecords = useMemo(
-    () => [...attendanceRecords]
+    () => attendanceRecords
+      .filter((r) => r.attendance_date >= periodStart && r.attendance_date <= periodEnd)
       .sort((a, b) => b.attendance_date.localeCompare(a.attendance_date))
-      .slice(0, 30),
-    [attendanceRecords]
+      .slice(0, 50),
+    [attendanceRecords, periodStart, periodEnd]
   );
 
   if (showHistory) {
@@ -336,8 +353,43 @@ export default function AttendanceScreen() {
     </>
   );
 
+  const yearOptions = [];
+  for (let y = currentYear; y >= currentYear - 2; y--) yearOptions.push(y);
+
   return (
     <ScrollView style={styles.container}>
+      {/* 기간 선택 */}
+      <Card style={styles.card}>
+        <Card.Content>
+          <Text style={styles.periodTitle}>기간 선택</Text>
+          <View style={styles.periodRow}>
+            {yearOptions.map((y) => (
+              <TouchableOpacity
+                key={y}
+                style={[styles.periodBtn, selectedYear === y && styles.periodBtnActive]}
+                onPress={() => setSelectedYear(y)}
+              >
+                <Text style={[styles.periodBtnText, selectedYear === y && styles.periodBtnTextActive]}>{y}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={styles.periodRow}>
+            <TouchableOpacity
+              style={[styles.periodBtn, { flex: 1 }, selectedHalf === 1 && styles.periodBtnActive]}
+              onPress={() => setSelectedHalf(1)}
+            >
+              <Text style={[styles.periodBtnText, selectedHalf === 1 && styles.periodBtnTextActive]}>상반기 (1~6월)</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.periodBtn, { flex: 1 }, selectedHalf === 2 && styles.periodBtnActive]}
+              onPress={() => setSelectedHalf(2)}
+            >
+              <Text style={[styles.periodBtnText, selectedHalf === 2 && styles.periodBtnTextActive]}>하반기 (7~12월)</Text>
+            </TouchableOpacity>
+          </View>
+        </Card.Content>
+      </Card>
+
       {/* 강사 안내 */}
       {!isAdmin && assignedClassIds.length > 0 && (
         <Card style={[styles.card, { backgroundColor: '#E8F4FD' }]}>
@@ -439,6 +491,13 @@ const styles = StyleSheet.create({
   historyName: { fontSize: 15, fontWeight: '600', color: COLORS.text },
   historyDate: { fontSize: 12, color: COLORS.textSecondary },
   emptyText: { color: COLORS.textSecondary, textAlign: 'center', paddingVertical: 16 },
+  // 기간 선택
+  periodTitle: { fontSize: 16, fontWeight: 'bold', color: COLORS.text, marginBottom: 10 },
+  periodRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  periodBtn: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center' },
+  periodBtnActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  periodBtnText: { fontSize: 14, color: COLORS.text, fontWeight: '600' },
+  periodBtnTextActive: { color: '#FFF' },
   // 미입력 스타일
   missingCard: { marginHorizontal: 16, marginTop: 8, borderRadius: 10, borderLeftWidth: 4, borderLeftColor: COLORS.danger },
   missingRow: { flexDirection: 'row', alignItems: 'center' },
