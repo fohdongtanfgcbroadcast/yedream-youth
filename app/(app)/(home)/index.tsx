@@ -179,12 +179,38 @@ export default function HomeScreen() {
 지금도 그 사랑 받고있지요🎉`;
   };
 
-  const copyBirthdayMessage = (member: typeof members[0]) => {
+  const copyBirthdayMessage = async (member: typeof members[0]) => {
     const msg = getBirthdayMessage(member);
+    let copied = false;
+
+    // 방법 1: Clipboard API (HTTPS 환경)
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(msg).then(() => {
-        webAlert('생일 축하 메시지가 복사되었습니다.');
-      });
+      try {
+        await navigator.clipboard.writeText(msg);
+        copied = true;
+      } catch {}
+    }
+
+    // 방법 2: execCommand 폴백 (모바일 브라우저)
+    if (!copied && typeof document !== 'undefined') {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = msg;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        textarea.style.top = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        copied = document.execCommand('copy');
+        document.body.removeChild(textarea);
+      } catch {}
+    }
+
+    if (copied) {
+      webAlert('생일 축하 메시지가 복사되었습니다.');
+    } else {
+      webAlert('자동 복사가 지원되지 않습니다.\n메시지를 길게 눌러 직접 복사해주세요.');
     }
   };
 
@@ -538,5 +564,5 @@ const styles = StyleSheet.create({
   birthdayModal: { backgroundColor: '#FFF', margin: 16, padding: 20, borderRadius: 16 },
   birthdayModalTitle: { fontSize: 22, fontWeight: 'bold', color: COLORS.text, textAlign: 'center', marginBottom: 16 },
   birthdayMessageBox: { backgroundColor: '#FFF9E6', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#F5A62340' },
-  birthdayMessageText: { fontSize: 15, lineHeight: 24, color: COLORS.text },
+  birthdayMessageText: { fontSize: 15, lineHeight: 24, color: COLORS.text, userSelect: 'text' } as any,
 });
