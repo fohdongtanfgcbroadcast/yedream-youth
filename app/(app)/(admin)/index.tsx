@@ -255,35 +255,35 @@ export default function AdminScreen() {
             <List.Item
               title="새가족 등록"
               description="새로운 청년 등록"
-              right={() => <Button mode="outlined" compact onPress={() => { resetForm(); setSection('newFamily'); }} labelStyle={{ fontSize: 12 }}>등록</Button>}
+              right={() => <Button mode="outlined" compact onPress={() => { resetForm(); setSection('newFamily'); }} labelStyle={{ fontSize: 12 }} style={{ borderRadius: 4 }}>등록</Button>}
               onPress={() => { resetForm(); setSection('newFamily'); }}
             />
             <Divider />
             <List.Item
               title="회원 관리"
               description={`${members.filter((m) => m.is_active).length}명`}
-              right={() => <Button mode="outlined" compact onPress={() => setSection('members')} labelStyle={{ fontSize: 12 }}>수정</Button>}
+              right={() => <Button mode="outlined" compact onPress={() => setSection('members')} labelStyle={{ fontSize: 12 }} style={{ borderRadius: 4 }}>수정</Button>}
               onPress={() => setSection('members')}
             />
             <Divider />
             <List.Item
               title="제자반 관리"
               description={`${classes.filter((c) => c.is_active).length}개`}
-              right={() => <Button mode="outlined" compact onPress={() => setSection('classes')} labelStyle={{ fontSize: 12 }}>수정</Button>}
+              right={() => <Button mode="outlined" compact onPress={() => setSection('classes')} labelStyle={{ fontSize: 12 }} style={{ borderRadius: 4 }}>수정</Button>}
               onPress={() => setSection('classes')}
             />
             <Divider />
             <List.Item
               title="계정 관리"
               description="사용자 계정 생성"
-              right={() => <Button mode="outlined" compact onPress={() => setSection('accounts')} labelStyle={{ fontSize: 12 }}>생성</Button>}
+              right={() => <Button mode="outlined" compact onPress={() => setSection('accounts')} labelStyle={{ fontSize: 12 }} style={{ borderRadius: 4 }}>생성</Button>}
               onPress={() => setSection('accounts')}
             />
             <Divider />
             <List.Item
               title="알림 설정"
               description="예약 알림 관리"
-              right={() => <Button mode="outlined" compact onPress={() => setSection('notifications')} labelStyle={{ fontSize: 12 }}>설정</Button>}
+              right={() => <Button mode="outlined" compact onPress={() => setSection('notifications')} labelStyle={{ fontSize: 12 }} style={{ borderRadius: 4 }}>설정</Button>}
               onPress={() => setSection('notifications')}
             />
           </Card>
