@@ -86,9 +86,7 @@ export default function AdminScreen() {
     if (!m) return;
     setEditingMemberId(memberId);
     setFormName(m.name);
-    // DB에 2000-MM-DD로 저장되어 있으면 MM-DD만 추출
-    const dob = m.date_of_birth || '';
-    setFormDob(dob.startsWith('2000-') ? dob.slice(5) : dob);
+    setFormDob(m.date_of_birth || '');
     setFormPhone(m.phone || '');
     setFormAddress(m.address || '');
     setFormNotes(m.notes || '');
@@ -102,7 +100,7 @@ export default function AdminScreen() {
     if (!formName.trim()) { webAlert('이름을 입력해주세요.'); return; }
     addMember({
       name: formName.trim(),
-      date_of_birth: formDob ? `2000-${formDob}` : undefined,
+      date_of_birth: formDob || undefined,
       phone: formPhone || undefined,
       address: formAddress || undefined,
       notes: formNotes || undefined,
@@ -119,7 +117,7 @@ export default function AdminScreen() {
     if (!editingMemberId || !formName.trim()) { webAlert('이름을 입력해주세요.'); return; }
     await updateMember(editingMemberId, {
       name: formName.trim(),
-      date_of_birth: formDob ? (formDob.length <= 5 ? `2000-${formDob}` : formDob) : null,
+      date_of_birth: formDob || null,
       phone: formPhone || null,
       address: formAddress || null,
       notes: formNotes || null,

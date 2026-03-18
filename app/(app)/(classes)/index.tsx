@@ -195,16 +195,30 @@ export default function ClassBrowseScreen() {
     <ScrollView style={styles.container}>
       <Text style={styles.pageTitle}>제자반 목록</Text>
 
-      {activeClasses.map((cls) => {
+      {/* 일반 제자반 */}
+      {activeClasses.filter((c) => !['군인', '졸업생'].includes(c.name)).map((cls) => {
         const count = members.filter((m) => m.class_id === cls.id && m.is_active).length;
         const instructorName = instructors[cls.id] || '미배정';
-
         return (
           <TouchableOpacity key={cls.id} onPress={() => setSelectedClassId(cls.id)}>
             <Card style={styles.classCard}>
               <Card.Content>
                 <Text style={styles.classCardTitle}>{cls.name}</Text>
                 <Text style={styles.classCardDesc}>{count}명 | 강사: {instructorName}</Text>
+              </Card.Content>
+            </Card>
+          </TouchableOpacity>
+        );
+      })}
+      {/* 군인, 졸업생 */}
+      {activeClasses.filter((c) => ['군인', '졸업생'].includes(c.name)).map((cls) => {
+        const count = members.filter((m) => m.class_id === cls.id && m.is_active).length;
+        return (
+          <TouchableOpacity key={cls.id} onPress={() => setSelectedClassId(cls.id)}>
+            <Card style={styles.classCard}>
+              <Card.Content>
+                <Text style={styles.classCardTitle}>{cls.name}</Text>
+                <Text style={styles.classCardDesc}>{count}명</Text>
               </Card.Content>
             </Card>
           </TouchableOpacity>
