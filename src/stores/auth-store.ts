@@ -26,6 +26,7 @@ interface AuthState {
   changePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
   resetPasswordByPhone: (email: string, phone: string) => Promise<{ success: boolean; error?: string }>;
   resetPasswordWithVerification: (email: string, phone: string, birthday: string) => Promise<{ success: boolean; newPassword?: string; error?: string }>;
+  resetPasswordSimple: (email: string, phone: string) => Promise<{ success: boolean; newPassword?: string; error?: string }>;
   autoLogin: () => Promise<boolean>;
 }
 
@@ -162,6 +163,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return { success: false, error: '입력한 정보가 일치하지 않습니다.\n이메일, 전화번호, 생일을 확인해주세요.' };
     }
 
+    return { success: true, newPassword: data as string };
+  },
+
+  // 계정 + 전화번호로 비밀번호 찾기 (간단)
+  resetPasswordSimple: async (email: string, phone: string) => {
+    const { data, error } = await supabase.rpc('reset_password_simple', {
+      p_email: email,
+      p_phone: phone,
+    });
+    if (error) return { success: false, error: error.message };
+    if (!data) return { success: false, error: '계정과 전화번호가 일치하지 않습니다.' };
     return { success: true, newPassword: data as string };
   },
 

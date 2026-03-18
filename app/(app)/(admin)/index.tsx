@@ -65,6 +65,12 @@ export default function AdminScreen() {
   // 알림 설정 폼
   const [notiTitle, setNotiTitle] = useState('');
   const [notiBody, setNotiBody] = useState('');
+
+  // 비밀번호 변경
+  const changePassword = useAuthStore((s) => s.changePassword);
+  const [cpCurrent, setCpCurrent] = useState('');
+  const [cpNew, setCpNew] = useState('');
+  const [cpConfirm, setCpConfirm] = useState('');
   const [notiDay, setNotiDay] = useState('0'); // 0=일요일
   const [notiHour, setNotiHour] = useState('19');
 
@@ -298,13 +304,18 @@ export default function AdminScreen() {
 
         <Card style={styles.card}>
           <List.Item
+            title="비밀번호 변경"
+            onPress={() => setSection('changePassword' as any)}
+          />
+          <Divider />
+          <List.Item
             title="로그아웃"
-                        titleStyle={{ color: COLORS.danger }}
+            titleStyle={{ color: COLORS.danger }}
             onPress={handleLogout}
           />
         </Card>
 
-        <Text style={styles.version}>예닮드림 청년부 v0.2.0</Text>
+        <Text style={styles.version}>예닮드림 청년부 v1.0.0</Text>
       </ScrollView>
     );
   }
@@ -776,6 +787,61 @@ export default function AdminScreen() {
           </Card.Content>
         </Card>
         <View style={{ height: 24 }} />
+      </ScrollView>
+    );
+  }
+
+  // ============ 비밀번호 변경 ============
+  if (section === ('changePassword' as any)) {
+    const handleChangePassword = async () => {
+      if (!cpNew || cpNew.length < 6) {
+        webAlert('새 비밀번호를 6자 이상 입력해주세요.');
+        return;
+      }
+      if (cpNew !== cpConfirm) {
+        webAlert('새 비밀번호가 일치하지 않습니다.');
+        return;
+      }
+      const result = await changePassword(cpNew);
+      if (result.success) {
+        webAlert('비밀번호가 변경되었습니다.');
+        setCpCurrent(''); setCpNew(''); setCpConfirm('');
+        setSection('menu');
+      } else {
+        webAlert(result.error || '비밀번호 변경에 실패했습니다.');
+      }
+    };
+
+    return (
+      <ScrollView style={styles.container}>
+        <View style={styles.sectionHeader}>
+          <Button onPress={() => { setCpCurrent(''); setCpNew(''); setCpConfirm(''); setSection('menu'); }}>← 뒤로</Button>
+          <Text style={styles.sectionTitle}>비밀번호 변경</Text>
+          <View style={{ width: 80 }} />
+        </View>
+        <Card style={styles.card}>
+          <Card.Content>
+            <TextInput
+              label="새 비밀번호"
+              value={cpNew}
+              onChangeText={setCpNew}
+              mode="outlined"
+              secureTextEntry
+              style={styles.input}
+            />
+            <TextInput
+              label="새 비밀번호 확인"
+              value={cpConfirm}
+              onChangeText={setCpConfirm}
+              mode="outlined"
+              secureTextEntry
+              style={styles.input}
+            />
+            <Button mode="contained" onPress={handleChangePassword} style={styles.submitBtn} contentStyle={{ paddingVertical: 6 }}>
+              비밀번호 변경
+            </Button>
+          </Card.Content>
+        </Card>
       </ScrollView>
     );
   }

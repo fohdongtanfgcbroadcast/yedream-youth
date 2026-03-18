@@ -14,7 +14,7 @@ export default function SignIn() {
   const loginError = useAuthStore((s) => s.loginError);
   const mustChangePassword = useAuthStore((s) => s.mustChangePassword);
   const changePassword = useAuthStore((s) => s.changePassword);
-  const resetPasswordWithVerification = useAuthStore((s) => s.resetPasswordWithVerification);
+  const resetPasswordSimple = useAuthStore((s) => s.resetPasswordSimple);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -155,15 +155,13 @@ export default function SignIn() {
   };
 
   const handleResetPassword = async () => {
-    if (!resetEmail.trim() || !resetPhone.trim() || !resetBirthday.trim()) {
-      webAlert('계정, 전화번호, 생일을 모두 입력해주세요.');
+    if (!resetEmail.trim() || !resetPhone.trim()) {
+      webAlert('계정과 전화번호를 모두 입력해주세요.');
       return;
     }
     const resetLoginEmail = resetEmail.trim().includes('@') ? resetEmail.trim() : `${resetEmail.trim()}@yedream.app`;
     setResetLoading(true);
-    const result = await resetPasswordWithVerification(
-      resetLoginEmail, resetPhone.trim(), resetBirthday.trim()
-    );
+    const result = await resetPasswordSimple(resetLoginEmail, resetPhone.trim());
     setResetLoading(false);
 
     if (result.success && result.newPassword) {
@@ -177,7 +175,6 @@ export default function SignIn() {
     setShowForgotPassword(false);
     setResetEmail('');
     setResetPhone('');
-    setResetBirthday('');
     setFoundPassword('');
   };
 
@@ -321,32 +318,23 @@ export default function SignIn() {
             </>
           ) : (
             <>
-              <Text style={styles.modalDesc}>계정 정보를 입력해주세요.</Text>
+              <Text style={styles.modalDesc}>계정과 등록된 전화번호를 입력해주세요.</Text>
               <TextInput
-                label="이메일 (계정)"
+                label="계정 (전화번호 또는 이메일)"
                 value={resetEmail}
                 onChangeText={setResetEmail}
                 mode="outlined"
                 style={styles.input}
-                keyboardType="email-address"
                 autoCapitalize="none"
               />
               <TextInput
-                label="생일 (YYYY-MM-DD)"
-                value={resetBirthday}
-                onChangeText={setResetBirthday}
-                mode="outlined"
-                style={styles.input}
-                placeholder="예: 1998-03-17"
-              />
-              <TextInput
-                label="전화번호"
+                label="등록된 전화번호"
                 value={resetPhone}
                 onChangeText={setResetPhone}
                 mode="outlined"
                 style={styles.input}
                 keyboardType="phone-pad"
-                placeholder="예: 010-1234-5678"
+                placeholder="예: 01012345678"
               />
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <Button mode="outlined" onPress={closeForgotPassword} style={{ flex: 1 }}>
