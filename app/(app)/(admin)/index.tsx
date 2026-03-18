@@ -118,21 +118,18 @@ export default function AdminScreen() {
     ]);
   };
 
-  const handleLogout = () => {
-    Alert.alert('로그아웃', '로그아웃 하시겠습니까?', [
-      { text: '취소', style: 'cancel' },
-      {
-        text: '로그아웃',
-        onPress: async () => {
-          // 자동 로그인 정보 삭제
-          storage.removeItem('auto_login');
-          storage.removeItem('autoLogin_email');
-          storage.removeItem('autoLogin_password');
-          await logout();
-          router.replace('/sign-in');
-        },
-      },
-    ]);
+  const handleLogout = async () => {
+    const confirmed = typeof window !== 'undefined'
+      ? window.confirm('로그아웃 하시겠습니까?')
+      : true;
+    if (!confirmed) return;
+
+    // 자동 로그인 정보 삭제
+    storage.removeItem('auto_login');
+    storage.removeItem('autoLogin_email');
+    storage.removeItem('autoLogin_password');
+    await logout();
+    router.replace('/sign-in');
   };
 
   const toggleAccountClass = (classId: string) => {
