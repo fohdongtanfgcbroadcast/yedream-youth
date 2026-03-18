@@ -329,9 +329,14 @@ export const useDataStore = create<DataState>((set, get) => ({
 
   searchMembers: (query) => {
     const q = query.toLowerCase();
-    return get().members.filter(
-      (m) => m.is_active && (m.name.toLowerCase().includes(q) || m.phone?.includes(q))
-    );
+    const { classes } = get();
+    return get().members.filter((m) => {
+      if (!m.is_active) return false;
+      if (m.name.toLowerCase().includes(q)) return true;
+      const cls = classes.find((c) => c.id === m.class_id);
+      if (cls && cls.name.toLowerCase().includes(q)) return true;
+      return false;
+    });
   },
 
   // ============ 통계 ============

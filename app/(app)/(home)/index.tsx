@@ -354,30 +354,6 @@ export default function HomeScreen() {
         </Card.Content>
       </Card>
 
-      {/* 오늘의 출석 */}
-      <Card style={styles.card}>
-        <Card.Title title="오늘의 출석 현황" />
-        <Card.Content>
-          {todaySummary.map((item) => {
-            const typeInfo = ATTENDANCE_TYPES.find((t) => t.key === item.type);
-            return (
-              <View key={item.type} style={styles.attendanceRow}>
-                <Chip
-                  icon={typeInfo?.icon}
-                  style={[styles.attendanceChip, { backgroundColor: typeInfo?.color + '20' }]}
-                  textStyle={{ color: typeInfo?.color }}
-                >
-                  {item.type}
-                </Chip>
-                <Text style={styles.attendanceCount}>{item.count}명</Text>
-              </View>
-            );
-          })}
-          {todaySummary.every((s) => s.count === 0) && (
-            <Text style={styles.emptyText}>오늘 출석 기록이 없습니다</Text>
-          )}
-        </Card.Content>
-      </Card>
 
       {/* 생일자 */}
       <Card style={styles.card}>

@@ -141,7 +141,7 @@ export default function SearchScreen() {
   return (
     <ScrollView style={styles.container}>
       <Searchbar
-        placeholder="이름 또는 연락처로 검색"
+        placeholder="이름 또는 제자반으로 검색"
         value={query}
         onChangeText={setQuery}
         style={styles.searchBar}
