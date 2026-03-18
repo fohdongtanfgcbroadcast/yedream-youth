@@ -19,7 +19,7 @@ export default function ClassBrowseScreen() {
       const { data } = await supabase
         .from('profiles')
         .select('id, display_name, assigned_class_ids')
-        .eq('role', 'instructor');
+        .in('role', ['instructor', 'pastor', 'evangelist']);
 
       if (data) {
         const map: Record<string, string> = {};

@@ -26,7 +26,7 @@ export default function AttendanceScreen() {
       const { data: instructors } = await supabase
         .from('profiles')
         .select('id, display_name, phone, assigned_class_ids')
-        .eq('role', 'instructor');
+        .in('role', ['instructor', 'pastor', 'evangelist']);
       if (!instructors) return;
 
       let needsReload = false;

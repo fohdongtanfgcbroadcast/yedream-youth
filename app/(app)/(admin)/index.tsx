@@ -44,7 +44,7 @@ export default function AdminScreen() {
   const [instructorProfiles, setInstructorProfiles] = useState<{ id: string; display_name: string; assigned_class_ids?: string[] }[]>([]);
   useEffect(() => {
     const loadInstructors = async () => {
-      const { data } = await supabase.from('profiles').select('id, display_name, assigned_class_ids').eq('role', 'instructor');
+      const { data } = await supabase.from('profiles').select('id, display_name, assigned_class_ids').in('role', ['instructor', 'pastor', 'evangelist']);
       if (data) setInstructorProfiles(data);
     };
     loadInstructors();
@@ -53,7 +53,7 @@ export default function AdminScreen() {
   // 계정 관리 폼
   const createInstructorAccount = useAuthStore((s) => s.createInstructorAccount);
   const createOfficerAccount = useAuthStore((s) => s.createOfficerAccount);
-  const [accountType, setAccountType] = useState<'instructor' | 'pastor' | 'officer'>('instructor');
+  const [accountType, setAccountType] = useState<'instructor' | 'pastor' | 'evangelist' | 'officer'>('instructor');
   const [accountEmail, setAccountEmail] = useState('');
   const [accountPassword, setAccountPassword] = useState('');
   const [accountName, setAccountName] = useState('');
@@ -169,7 +169,7 @@ export default function AdminScreen() {
     }
 
     // 강사 목록 새로고침
-    const { data } = await supabase.from('profiles').select('id, display_name, assigned_class_ids').eq('role', 'instructor');
+    const { data } = await supabase.from('profiles').select('id, display_name, assigned_class_ids').in('role', ['instructor', 'pastor', 'evangelist']);
     if (data) setInstructorProfiles(data);
 
     webAlert('제자반 정보가 수정되었습니다.');
@@ -209,7 +209,7 @@ export default function AdminScreen() {
       return;
     }
 
-    if (accountType === 'instructor' || accountType === 'pastor') {
+    if (accountType === 'instructor' || accountType === 'pastor' || accountType === 'evangelist') {
       if (accountClassIds.length === 0) {
         webAlert('담당 제자반을 1개 이상 선택해주세요.');
         return;
@@ -219,7 +219,7 @@ export default function AdminScreen() {
         accountEmail.trim(), accountPassword, accountName.trim(), accountPhone.trim(), accountClassIds,
       );
       if (!result.success) { webAlert(result.error || '계정 생성에 실패했습니다.'); return; }
-      const roleLabel = accountType === 'pastor' ? '목사' : '강사';
+      const roleLabel = accountType === 'pastor' ? '목사' : accountType === 'evangelist' ? '전도사' : '강사';
       webAlert(`${accountName} ${roleLabel} 계정이 생성되었습니다.\n\n이메일: ${accountEmail}\n휴대폰: ${accountPhone}\n담당반: ${classNames}\n\n* 최초 로그인 시 비밀번호 변경이 요청됩니다.`);
     } else {
       const result = await createOfficerAccount(
@@ -600,6 +600,10 @@ export default function AdminScreen() {
                 onPress={() => setAccountType('pastor')} compact style={styles.classButton}
                 buttonColor={accountType === 'pastor' ? '#2E6CB8' : undefined}
               >목사</Button>
+              <Button mode={accountType === 'evangelist' ? 'contained' : 'outlined'}
+                onPress={() => setAccountType('evangelist')} compact style={styles.classButton}
+                buttonColor={accountType === 'evangelist' ? '#27AE60' : undefined}
+              >전도사</Button>
               <Button mode={accountType === 'officer' ? 'contained' : 'outlined'}
                 onPress={() => setAccountType('officer')} compact style={styles.classButton}
                 buttonColor={accountType === 'officer' ? '#8E44AD' : undefined}
@@ -611,7 +615,7 @@ export default function AdminScreen() {
             <TextInput label="이름 *" value={accountName} onChangeText={setAccountName} mode="outlined" style={styles.input} />
             <TextInput label="휴대폰 번호 *" value={accountPhone} onChangeText={setAccountPhone} mode="outlined" style={styles.input} keyboardType="phone-pad" placeholder="예: 010-1234-5678" />
 
-            {(accountType === 'instructor' || accountType === 'pastor') && (
+            {(accountType === 'instructor' || accountType === 'pastor' || accountType === 'evangelist') && (
               <>
                 <Text style={styles.fieldLabel}>담당 제자반 (복수 선택 가능)</Text>
                 <View style={styles.classSelector}>
@@ -638,7 +642,7 @@ export default function AdminScreen() {
             <Button mode="contained" onPress={handleCreateAccount} style={styles.submitBtn} contentStyle={{ paddingVertical: 6 }}
               buttonColor={accountType === 'officer' ? '#8E44AD' : undefined}
             >
-              {accountType === 'instructor' ? '강사' : accountType === 'pastor' ? '목사' : '임원'} 계정 생성
+              {accountType === 'instructor' ? '강사' : accountType === 'pastor' ? '목사' : accountType === 'evangelist' ? '전도사' : '임원'} 계정 생성
             </Button>
 
             <Text style={{ fontSize: 11, color: COLORS.textSecondary, marginTop: 12, textAlign: 'center' }}>

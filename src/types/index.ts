@@ -1,5 +1,5 @@
 // 사용자 역할
-export type UserRole = 'admin' | 'instructor' | 'pastor' | 'officer' | 'member';
+export type UserRole = 'admin' | 'instructor' | 'pastor' | 'evangelist' | 'officer' | 'member';
 
 // 출석 유형
 export type AttendanceType = '철야' | '제자교육' | '주일예배';

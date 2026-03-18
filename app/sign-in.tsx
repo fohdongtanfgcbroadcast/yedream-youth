@@ -68,7 +68,8 @@ export default function SignIn() {
   };
 
   const handleAutoLogin = async (e: string, p: string) => {
-    const success = await login(e, p);
+    const loginEmail = e.includes('@') ? e : `${e}@yedream.app`;
+    const success = await login(loginEmail, p);
     if (success) {
       const state = useAuthStore.getState();
       if (state.mustChangePassword) {
@@ -111,7 +112,9 @@ export default function SignIn() {
       await asyncStorage.removeItem('autoLogin_password');
     }
 
-    const success = await login(email.trim(), password);
+    // 숫자만 입력 시 @yedream.app 자동 추가
+    const loginEmail = email.trim().includes('@') ? email.trim() : `${email.trim()}@yedream.app`;
+    const success = await login(loginEmail, password);
     if (success) {
       const state = useAuthStore.getState();
       if (state.mustChangePassword) {
@@ -153,12 +156,13 @@ export default function SignIn() {
 
   const handleResetPassword = async () => {
     if (!resetEmail.trim() || !resetPhone.trim() || !resetBirthday.trim()) {
-      webAlert('이메일, 전화번호, 생일을 모두 입력해주세요.');
+      webAlert('계정, 전화번호, 생일을 모두 입력해주세요.');
       return;
     }
+    const resetLoginEmail = resetEmail.trim().includes('@') ? resetEmail.trim() : `${resetEmail.trim()}@yedream.app`;
     setResetLoading(true);
     const result = await resetPasswordWithVerification(
-      resetEmail.trim(), resetPhone.trim(), resetBirthday.trim()
+      resetLoginEmail, resetPhone.trim(), resetBirthday.trim()
     );
     setResetLoading(false);
 
@@ -187,12 +191,11 @@ export default function SignIn() {
         <Card style={styles.card}>
           <Card.Content>
             <TextInput
-              label="이메일"
+              label="계정 (전화번호 또는 이메일)"
               value={email}
               onChangeText={setEmail}
               mode="outlined"
               style={styles.input}
-              keyboardType="email-address"
               autoCapitalize="none"
             />
 

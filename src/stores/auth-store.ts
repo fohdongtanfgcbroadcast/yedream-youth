@@ -76,11 +76,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   isAdmin: () => get().profile?.role === 'admin',
-  isInstructor: () => ['instructor', 'pastor', 'admin'].includes(get().profile?.role || ''),
+  isInstructor: () => ['instructor', 'pastor', 'evangelist', 'admin'].includes(get().profile?.role || ''),
   isOfficer: () => get().profile?.role === 'officer',
   canCheckAttendance: () => {
     const role = get().profile?.role;
-    return role === 'admin' || role === 'instructor' || role === 'pastor';
+    return role === 'admin' || role === 'instructor' || role === 'pastor' || role === 'evangelist';
   },
   getAssignedClassIds: () => get().profile?.assigned_class_ids || [],
 
