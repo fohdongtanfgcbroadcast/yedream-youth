@@ -4,24 +4,29 @@ import { Text, Card, SegmentedButtons, DataTable, Button, Divider } from 'react-
 import { useAuthStore } from '../../../src/stores/auth-store';
 import { useDataStore } from '../../../src/stores/data-store';
 import { COLORS, ATTENDANCE_TYPES } from '../../../src/lib/constants';
-import { getSundayOfWeek, getWeekDates, toDateString } from '../../../src/lib/utils';
+import { getSundayOfWeek, getWeekDates, toDateString, shiftWeek } from '../../../src/lib/utils';
 import * as XLSX from 'xlsx';
 
 function getRankLabel(rank: number): string {
   return `${rank}`;
 }
 
-// 기간 내 주차 수 계산 (출석 기록이 있는 주만)
-function countWeeksInPeriod(records: { attendance_date: string }[], startDate: string, endDate: string): number {
-  const sundays = new Set<string>();
-  records.forEach((r) => {
-    if (r.attendance_date >= startDate && r.attendance_date <= endDate) {
-      const d = new Date(r.attendance_date);
-      const sun = getSundayOfWeek(d);
-      sundays.add(toDateString(sun));
-    }
-  });
-  return Math.max(sundays.size, 1);
+// 기간 내 전체 주차 수 계산 (오늘까지의 모든 일요일)
+function countWeeksInPeriod(startDate: string, endDate: string): number {
+  const today = new Date();
+  const pStart = new Date(startDate);
+  const pEnd = new Date(endDate);
+  const limit = pEnd < today ? pEnd : today;
+
+  let sun = getSundayOfWeek(pStart);
+  if (sun < pStart) sun = shiftWeek(sun, 1);
+
+  let count = 0;
+  while (sun <= limit) {
+    count++;
+    sun = shiftWeek(sun, 1);
+  }
+  return Math.max(count, 1);
 }
 
 export default function RankingsScreen() {
@@ -47,10 +52,10 @@ export default function RankingsScreen() {
     );
   }, [attendanceRecords, periodStart, periodEnd]);
 
-  // 기간 내 주차 수
+  // 기간 내 전체 주차 수 (오늘까지)
   const weeksInPeriod = useMemo(
-    () => countWeeksInPeriod(attendanceRecords, periodStart, periodEnd),
-    [attendanceRecords, periodStart, periodEnd]
+    () => countWeeksInPeriod(periodStart, periodEnd),
+    [periodStart, periodEnd]
   );
 
   // 기간 필터된 개인별 순위
