@@ -375,7 +375,12 @@ export default function HomeScreen() {
                   <Avatar.Text size={36} label={m.name.charAt(0)} style={{ backgroundColor: COLORS.secondary }} />
                   <View style={styles.birthdayInfo}>
                     <Text style={styles.birthdayName}>{m.name}</Text>
-                    <Text style={styles.birthdayDate}>{formatDate(m.date_of_birth!)}</Text>
+                    <Text style={styles.birthdayDate}>{(() => {
+                      const p = m.date_of_birth!.split('-');
+                      const mm = p.length === 3 ? parseInt(p[1]) : parseInt(p[0]);
+                      const dd = p.length === 3 ? parseInt(p[2]) : parseInt(p[1]);
+                      return `${m.is_lunar_birthday ? '음력 ' : ''}${mm}월 ${dd}일`;
+                    })()}</Text>
                   </View>
                   <Text style={{ color: COLORS.primary, fontSize: 13 }}>축하 메시지 ›</Text>
                 </View>

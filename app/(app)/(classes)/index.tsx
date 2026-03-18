@@ -83,7 +83,12 @@ export default function ClassBrowseScreen() {
               <Text style={styles.profileName}>{selectedMember.name}</Text>
               {selectedMember.date_of_birth && (
                 <Text style={styles.profileDetail}>
-                  {formatDate(selectedMember.date_of_birth)}
+                  {(() => {
+                    const p = selectedMember.date_of_birth!.split('-');
+                    const mm = p.length === 3 ? parseInt(p[1]) : parseInt(p[0]);
+                    const dd = p.length === 3 ? parseInt(p[2]) : parseInt(p[1]);
+                    return `${selectedMember.is_lunar_birthday ? '음력 ' : ''}${mm}월 ${dd}일`;
+                  })()}
                 </Text>
               )}
               {selectedMember.phone && <Text style={styles.profileDetail}>{selectedMember.phone}</Text>}
