@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { Text, TextInput, Button, Card, Checkbox, Modal, Portal } from 'react-native-paper';
+import { Text, TextInput, Button, Card, Switch, Modal, Portal } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../src/stores/auth-store';
 import { COLORS } from '../src/lib/constants';
@@ -195,13 +195,12 @@ export default function SignIn() {
               <Text style={styles.errorText}>{loginError}</Text>
             )}
 
-            {/* 체크박스 옵션 */}
+            {/* 로그인 옵션 */}
             <View style={styles.checkboxRow}>
               <View style={styles.checkboxItem}>
-                <Checkbox
-                  status={saveCredentials ? 'checked' : 'unchecked'}
-                  onPress={() => {
-                    const next = !saveCredentials;
+                <Switch
+                  value={saveCredentials}
+                  onValueChange={(next) => {
                     setSaveCredentials(next);
                     if (!next) {
                       setAutoLogin(false);
@@ -218,10 +217,9 @@ export default function SignIn() {
                 <Text style={styles.checkboxLabel}>ID/PW 저장</Text>
               </View>
               <View style={styles.checkboxItem}>
-                <Checkbox
-                  status={autoLogin ? 'checked' : 'unchecked'}
-                  onPress={() => {
-                    const next = !autoLogin;
+                <Switch
+                  value={autoLogin}
+                  onValueChange={(next) => {
                     setAutoLogin(next);
                     if (next) setSaveCredentials(true);
                     if (!next) {

@@ -36,6 +36,9 @@
       "themeColor": "#4A90D9",
       "backgroundColor": "#F8F9FA"
     },
+    "experiments": {
+      "baseUrl": "/yedream-youth"
+    },
     "plugins": [
       "expo-router"
     ]
