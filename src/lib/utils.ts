@@ -104,6 +104,17 @@ export const storage = {
   },
 };
 
+// ============ 웹 호환 Alert ============
+
+export function webAlert(message: string): void {
+  if (typeof window !== 'undefined') window.alert(message);
+}
+
+export function webConfirm(message: string): boolean {
+  if (typeof window !== 'undefined') return window.confirm(message);
+  return true;
+}
+
 // ============ 캘린더 유틸 ============
 
 // 특정 월의 일수

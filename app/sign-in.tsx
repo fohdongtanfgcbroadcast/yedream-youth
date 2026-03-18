@@ -4,7 +4,7 @@ import { Text, TextInput, Button, Card, Checkbox, Modal, Portal } from 'react-na
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../src/stores/auth-store';
 import { COLORS } from '../src/lib/constants';
-import { storage } from '../src/lib/utils';
+import { storage, webAlert } from '../src/lib/utils';
 
 export default function SignIn() {
   const router = useRouter();
@@ -68,11 +68,11 @@ export default function SignIn() {
 
   const handleLogin = async () => {
     if (!email.trim()) {
-      Alert.alert('알림', '이메일을 입력해주세요.');
+      webAlert('이메일을 입력해주세요.');
       return;
     }
     if (!password) {
-      Alert.alert('알림', '비밀번호를 입력해주세요.');
+      webAlert('비밀번호를 입력해주세요.');
       return;
     }
 
@@ -110,11 +110,11 @@ export default function SignIn() {
 
   const handleChangePassword = async () => {
     if (!newPassword || newPassword.length < 6) {
-      Alert.alert('알림', '새 비밀번호를 6자 이상 입력해주세요.');
+      webAlert('새 비밀번호를 6자 이상 입력해주세요.');
       return;
     }
     if (newPassword !== confirmPassword) {
-      Alert.alert('알림', '비밀번호가 일치하지 않습니다.');
+      webAlert('비밀번호가 일치하지 않습니다.');
       return;
     }
     const result = await changePassword(newPassword);
@@ -126,19 +126,19 @@ export default function SignIn() {
       if (autoLogin) {
         storage.setItem('autoLogin_password', newPassword);
       }
-      Alert.alert('완료', '비밀번호가 변경되었습니다.');
+      webAlert('비밀번호가 변경되었습니다.');
       setShowPasswordChange(false);
       setNewPassword('');
       setConfirmPassword('');
       router.replace('/(app)/(home)');
     } else {
-      Alert.alert('오류', result.error || '비밀번호 변경에 실패했습니다.');
+      webAlert(result.error || '비밀번호 변경에 실패했습니다.');
     }
   };
 
   const handleResetPassword = async () => {
     if (!resetEmail.trim() || !resetPhone.trim()) {
-      Alert.alert('알림', '이메일과 휴대폰 번호를 모두 입력해주세요.');
+      webAlert('이메일과 휴대폰 번호를 모두 입력해주세요.');
       return;
     }
     setResetLoading(true);
@@ -146,12 +146,12 @@ export default function SignIn() {
     setResetLoading(false);
 
     if (result.success) {
-      Alert.alert('완료', '비밀번호 재설정 이메일이 발송되었습니다.\n이메일을 확인해주세요.');
+      webAlert('비밀번호 재설정 이메일이 발송되었습니다.\n이메일을 확인해주세요.');
       setShowForgotPassword(false);
       setResetEmail('');
       setResetPhone('');
     } else {
-      Alert.alert('오류', result.error || '비밀번호 재설정에 실패했습니다.');
+      webAlert(result.error || '비밀번호 재설정에 실패했습니다.');
     }
   };
 

@@ -4,7 +4,7 @@ import { Text, Card, SegmentedButtons, DataTable, Button, Divider } from 'react-
 import { useAuthStore } from '../../../src/stores/auth-store';
 import { useDataStore } from '../../../src/stores/data-store';
 import { COLORS, ATTENDANCE_TYPES } from '../../../src/lib/constants';
-import { getSundayOfWeek, getWeekDates, toDateString, shiftWeek } from '../../../src/lib/utils';
+import { getSundayOfWeek, getWeekDates, toDateString, shiftWeek, webAlert } from '../../../src/lib/utils';
 import * as XLSX from 'xlsx';
 
 function getRankLabel(rank: number): string {
@@ -174,9 +174,9 @@ export default function RankingsScreen() {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
       XLSX.writeFile(wb, filename);
-      Alert.alert('완료', `${filename} 파일이 저장되었습니다.`);
+      webAlert( `${filename} 파일이 저장되었습니다.`);
     } catch (e: any) {
-      Alert.alert('오류', '엑셀 저장에 실패했습니다: ' + e.message);
+      webAlert( '엑셀 저장에 실패했습니다: ' + e.message);
     }
   };
 

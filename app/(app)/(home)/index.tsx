@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../src/stores/auth-store';
 import { useDataStore } from '../../../src/stores/data-store';
 import { COLORS, ATTENDANCE_TYPES } from '../../../src/lib/constants';
-import { formatDate, getDaysInMonth, getFirstDayOfMonth, toDateString, getSundayOfWeek, getWeekDates } from '../../../src/lib/utils';
+import { formatDate, getDaysInMonth, getFirstDayOfMonth, toDateString, getSundayOfWeek, getWeekDates, webAlert, webConfirm } from '../../../src/lib/utils';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -107,7 +107,7 @@ export default function HomeScreen() {
 
   const handleAddSchedule = () => {
     if (!scheduleTitle.trim()) {
-      Alert.alert('알림', '일정 제목을 입력해주세요.');
+      webAlert('일정 제목을 입력해주세요.');
       return;
     }
     if (!selectedDate) return;
@@ -117,17 +117,14 @@ export default function HomeScreen() {
       event_date: selectedDate,
       created_by: profile?.id,
     });
-    Alert.alert('완료', '일정이 등록되었습니다.');
+    webAlert('일정이 등록되었습니다.');
     setScheduleTitle('');
     setScheduleDesc('');
     setShowAddSchedule(false);
   };
 
   const handleDeleteSchedule = (id: string) => {
-    Alert.alert('삭제', '이 일정을 삭제하시겠습니까?', [
-      { text: '취소', style: 'cancel' },
-      { text: '삭제', style: 'destructive', onPress: () => deleteSchedule(id) },
-    ]);
+    if (webConfirm('이 일정을 삭제하시겠습니까?')) deleteSchedule(id);
   };
 
   // 캘린더 날짜 배열

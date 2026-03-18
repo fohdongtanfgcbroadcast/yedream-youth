@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../src/stores/auth-store';
 import { useDataStore } from '../../../src/stores/data-store';
 import { COLORS, ROLES } from '../../../src/lib/constants';
-import { formatDate, calculateAge, storage } from '../../../src/lib/utils';
+import { formatDate, calculateAge, storage, webAlert, webConfirm } from '../../../src/lib/utils';
 
 type AdminSection = 'menu' | 'members' | 'classes' | 'addMember' | 'addClass' | 'editMember' | 'newFamily' | 'accounts' | 'notifications';
 
@@ -67,7 +67,7 @@ export default function AdminScreen() {
   };
 
   const handleAddMember = () => {
-    if (!formName.trim()) { Alert.alert('알림', '이름을 입력해주세요.'); return; }
+    if (!formName.trim()) { webAlert('이름을 입력해주세요.'); return; }
     addMember({
       name: formName.trim(),
       date_of_birth: formDob || undefined,
@@ -76,13 +76,13 @@ export default function AdminScreen() {
       notes: formNotes || undefined,
       class_id: formClassId || undefined,
     });
-    Alert.alert('완료', `${formName} 회원이 추가되었습니다.`);
+    webAlert(`${formName} 회원이 추가되었습니다.`);
     resetForm();
     setSection('members');
   };
 
   const handleUpdateMember = () => {
-    if (!editingMemberId || !formName.trim()) { Alert.alert('알림', '이름을 입력해주세요.'); return; }
+    if (!editingMemberId || !formName.trim()) { webAlert('이름을 입력해주세요.'); return; }
     updateMember(editingMemberId, {
       name: formName.trim(),
       date_of_birth: formDob || undefined,
@@ -91,38 +91,29 @@ export default function AdminScreen() {
       notes: formNotes || undefined,
       class_id: formClassId || undefined,
     });
-    Alert.alert('완료', '회원 정보가 수정되었습니다.');
+    webAlert('회원 정보가 수정되었습니다.');
     resetForm();
     setSection('members');
   };
 
   const handleDeleteMember = (id: string, name: string) => {
-    Alert.alert('삭제 확인', `${name} 회원을 삭제하시겠습니까?`, [
-      { text: '취소', style: 'cancel' },
-      { text: '삭제', style: 'destructive', onPress: () => deleteMember(id) },
-    ]);
+    if (webConfirm(`${name} 회원을 삭제하시겠습니까?`)) deleteMember(id);
   };
 
   const handleAddClass = () => {
-    if (!newClassName.trim()) { Alert.alert('알림', '제자반 이름을 입력해주세요.'); return; }
+    if (!newClassName.trim()) { webAlert('제자반 이름을 입력해주세요.'); return; }
     addClass({ name: newClassName.trim(), description: newClassDesc || undefined });
-    Alert.alert('완료', `${newClassName} 제자반이 추가되었습니다.`);
+    webAlert(`${newClassName} 제자반이 추가되었습니다.`);
     setNewClassName(''); setNewClassDesc('');
     setSection('classes');
   };
 
   const handleDeleteClass = (id: string, name: string) => {
-    Alert.alert('삭제 확인', `${name} 제자반을 삭제하시겠습니까?`, [
-      { text: '취소', style: 'cancel' },
-      { text: '삭제', style: 'destructive', onPress: () => deleteClass(id) },
-    ]);
+    if (webConfirm(`${name} 제자반을 삭제하시겠습니까?`)) deleteClass(id);
   };
 
   const handleLogout = async () => {
-    const confirmed = typeof window !== 'undefined'
-      ? window.confirm('로그아웃 하시겠습니까?')
-      : true;
-    if (!confirmed) return;
+    if (!webConfirm('로그아웃 하시겠습니까?')) return;
 
     // 자동 로그인 정보 삭제
     storage.removeItem('auto_login');
@@ -141,15 +132,15 @@ export default function AdminScreen() {
 
   const handleCreateAccount = async () => {
     if (!accountEmail.trim() || !accountName.trim() || !accountPassword.trim()) {
-      Alert.alert('알림', '이메일, 비밀번호, 이름을 모두 입력해주세요.');
+      webAlert('이메일, 비밀번호, 이름을 모두 입력해주세요.');
       return;
     }
     if (!accountPhone.trim()) {
-      Alert.alert('알림', '휴대폰 번호를 입력해주세요.');
+      webAlert('휴대폰 번호를 입력해주세요.');
       return;
     }
     if (accountClassIds.length === 0) {
-      Alert.alert('알림', '담당 제자반을 1개 이상 선택해주세요.');
+      webAlert('담당 제자반을 1개 이상 선택해주세요.');
       return;
     }
     const classNames = accountClassIds.map((id) => classes.find((c) => c.id === id)?.name).join(', ');
@@ -161,20 +152,20 @@ export default function AdminScreen() {
       accountClassIds,
     );
     if (!result.success) {
-      Alert.alert('오류', result.error || '계정 생성에 실패했습니다.');
+      webAlert(result.error || '계정 생성에 실패했습니다.');
       return;
     }
-    Alert.alert('완료', `${accountName} 강사 계정이 생성되었습니다.\n\n이메일: ${accountEmail}\n휴대폰: ${accountPhone}\n담당반: ${classNames}\n\n* 최초 로그인 시 비밀번호 변경이 요청됩니다.`);
+    webAlert(`${accountName} 강사 계정이 생성되었습니다.\n\n이메일: ${accountEmail}\n휴대폰: ${accountPhone}\n담당반: ${classNames}\n\n* 최초 로그인 시 비밀번호 변경이 요청됩니다.`);
     setAccountEmail(''); setAccountPassword(''); setAccountName(''); setAccountPhone(''); setAccountClassIds([]);
   };
 
   const handleSaveNotification = () => {
     if (!notiTitle.trim() || !notiBody.trim()) {
-      Alert.alert('알림', '제목과 내용을 입력해주세요.');
+      webAlert('제목과 내용을 입력해주세요.');
       return;
     }
     const days = ['일', '월', '화', '수', '목', '금', '토'];
-    Alert.alert('완료', `알림이 설정되었습니다.\n\n매주 ${days[Number(notiDay)]}요일 ${notiHour}시\n제목: ${notiTitle}\n내용: ${notiBody}`);
+    webAlert(`알림이 설정되었습니다.\n\n매주 ${days[Number(notiDay)]}요일 ${notiHour}시\n제목: ${notiTitle}\n내용: ${notiBody}`);
     setNotiTitle(''); setNotiBody('');
   };
 

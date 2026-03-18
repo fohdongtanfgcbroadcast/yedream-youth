@@ -8,7 +8,7 @@ import { AttendanceType, Member } from '../../../src/types';
 import { supabase } from '../../../src/lib/supabase';
 import {
   getSundayOfWeek, getWeekDates, shiftWeek, formatWeekRange,
-  formatShortDate, toDateString, getDayOfWeek,
+  formatShortDate, toDateString, getDayOfWeek, webAlert, webConfirm,
 } from '../../../src/lib/utils';
 
 export default function AttendanceScreen() {
@@ -144,20 +144,14 @@ export default function AttendanceScreen() {
     existing: Set<string>,
   ) => {
     if (existing.has(memberId) && (isAdmin || isInstructor)) {
-      Alert.alert('출석 수정', '이미 출석 처리된 항목을 취소하시겠습니까?', [
-        { text: '아니오', style: 'cancel' },
-        {
-          text: '출석 취소', style: 'destructive',
-          onPress: () => {
-            const type: AttendanceType = checked === checkedCholya ? '철야' : checked === checkedJeja ? '제자교육' : '주일예배';
-            const date = type === '철야' ? weekDates.friday : weekDates.sunday;
-            const record = attendanceRecords.find(
-              (a) => a.member_id === memberId && a.attendance_type === type && a.attendance_date === date
-            );
-            if (record) removeAttendance(record.id);
-          },
-        },
-      ]);
+      if (webConfirm('이미 출석 처리된 항목을 취소하시겠습니까?')) {
+        const type: AttendanceType = checked === checkedCholya ? '철야' : checked === checkedJeja ? '제자교육' : '주일예배';
+        const date = type === '철야' ? weekDates.friday : weekDates.sunday;
+        const record = attendanceRecords.find(
+          (a) => a.member_id === memberId && a.attendance_type === type && a.attendance_date === date
+        );
+        if (record) removeAttendance(record.id);
+      }
       return;
     }
     if (existing.has(memberId)) return;
@@ -185,11 +179,11 @@ export default function AttendanceScreen() {
     });
 
     if (count === 0) {
-      Alert.alert('알림', '출석 체크할 인원을 선택해주세요.');
+      webAlert('출석 체크할 인원을 선택해주세요.');
       return;
     }
 
-    Alert.alert('완료', `${count}건의 출석이 등록되었습니다.`);
+    webAlert(`${count}건의 출석이 등록되었습니다.`);
     setCheckedCholya(new Set());
     setCheckedJeja(new Set());
     setCheckedJuil(new Set());
@@ -250,10 +244,9 @@ export default function AttendanceScreen() {
                   <IconButton
                     icon="close-circle" size={18} iconColor={COLORS.danger}
                     onPress={() => {
-                      Alert.alert('삭제', '이 출석 기록을 삭제하시겠습니까?', [
-                        { text: '취소', style: 'cancel' },
-                        { text: '삭제', style: 'destructive', onPress: () => removeAttendance(record.id) },
-                      ]);
+                      if (webConfirm('이 출석 기록을 삭제하시겠습니까?')) {
+                        removeAttendance(record.id);
+                      }
                     }}
                   />
                 )}
