@@ -225,7 +225,7 @@ export default function AttendanceScreen() {
     return (
       <ScrollView style={styles.container}>
         <View style={styles.header}>
-          <Button onPress={() => setShowHistory(false)}>출석 입력</Button>
+          <Button onPress={() => setShowHistory(false)}>← 뒤로</Button>
           <Text style={styles.headerTitle}>출석 이력</Text>
         </View>
         {recentRecords.map((record) => {
@@ -269,7 +269,7 @@ export default function AttendanceScreen() {
     return (
       <ScrollView style={styles.container}>
         <View style={styles.header}>
-          <Button onPress={() => setShowMissing(false)}>출석 입력</Button>
+          <Button onPress={() => setShowMissing(false)}>← 뒤로</Button>
           <Text style={styles.headerTitle}>출석 기록 미입력</Text>
         </View>
 

@@ -147,7 +147,7 @@ export default function SearchScreen() {
           onChangeText={setQuery}
           style={styles.searchInput}
         />
-        <Text style={styles.searchIcon}>🔍</Text>
+        <Text style={styles.searchIcon}>⌕</Text>
       </View>
 
       {query.length > 0 && (

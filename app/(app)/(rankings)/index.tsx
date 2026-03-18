@@ -254,8 +254,8 @@ export default function RankingsScreen() {
               {individualRankings.slice(0, 10).map((item) => (
                 <DataTable.Row key={item.member_id} style={item.point_rank <= 3 ? styles.highlightRow : undefined}>
                   <DataTable.Cell style={{ flex: 0.4 }}>
-                    <View style={[styles.rankBadge, { backgroundColor: getRankColor(item.point_rank) + '20', borderColor: getRankColor(item.point_rank) }]}>
-                      <Text style={[styles.rankText, { color: getRankColor(item.point_rank) }]}>{item.point_rank}</Text>
+                    <View style={[styles.rankBadge, { backgroundColor: getRankColor(item.point_rank) }]}>
+                      <Text style={styles.rankText}>{item.point_rank}</Text>
                     </View>
                   </DataTable.Cell>
                   <DataTable.Cell style={{ flex: 1.2 }}>
@@ -291,8 +291,8 @@ export default function RankingsScreen() {
                 {classRankings.map((item) => (
                   <DataTable.Row key={item.class_id} style={item.final_rank <= 2 ? styles.highlightRow : undefined}>
                     <DataTable.Cell style={{ flex: 0.4 }}>
-                      <View style={[styles.rankBadge, { backgroundColor: getRankColor(item.final_rank) + '20', borderColor: getRankColor(item.final_rank) }]}>
-                        <Text style={[styles.rankText, { color: getRankColor(item.final_rank) }]}>{item.final_rank}</Text>
+                      <View style={[styles.rankBadge, { backgroundColor: getRankColor(item.final_rank) }]}>
+                        <Text style={styles.rankText}>{item.final_rank}</Text>
                       </View>
                     </DataTable.Cell>
                     <DataTable.Cell style={{ flex: 1.2 }}>
@@ -533,8 +533,8 @@ const styles = StyleSheet.create({
   periodBtnTextActive: { color: '#FFF' },
   periodInfo: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', marginTop: 4 },
   // 순위
-  rankBadge: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  rankText: { fontSize: 14, fontWeight: 'bold' },
+  rankBadge: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  rankText: { fontSize: 14, fontWeight: 'bold', color: '#FFF' },
   highlightRow: { backgroundColor: '#FEF3E215' },
   nameText: { fontSize: 14, fontWeight: '600', color: COLORS.text },
   classText: { fontSize: 13, color: COLORS.textSecondary },
