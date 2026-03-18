@@ -10,6 +10,7 @@ export interface Profile {
   role: UserRole;
   display_name: string;
   phone?: string;
+  must_change_password?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -101,6 +102,16 @@ export interface ScheduledNotification {
   target_role?: UserRole;
   cron_expression: string;
   is_active: boolean;
+  created_by?: string;
+  created_at: string;
+}
+
+// 일정
+export interface Schedule {
+  id: string;
+  title: string;
+  description?: string;
+  event_date: string;
   created_by?: string;
   created_at: string;
 }

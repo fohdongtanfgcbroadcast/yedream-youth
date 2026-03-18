@@ -8,6 +8,7 @@ import {
   AttendanceType,
   IndividualRanking,
   ClassRanking,
+  Schedule,
 } from '../types';
 
 interface DataState {
@@ -15,6 +16,7 @@ interface DataState {
   classes: DiscipleshipClass[];
   familyGroups: FamilyGroup[];
   attendanceRecords: AttendanceRecord[];
+  schedules: Schedule[];
   isLoading: boolean;
 
   // 데이터 로드
@@ -23,6 +25,7 @@ interface DataState {
   loadClasses: () => Promise<void>;
   loadAttendance: () => Promise<void>;
   loadFamilyGroups: () => Promise<void>;
+  loadSchedules: () => Promise<void>;
 
   // 회원 관리
   addMember: (member: Omit<Member, 'id' | 'created_at' | 'updated_at' | 'is_active'>) => Promise<void>;
@@ -44,6 +47,10 @@ interface DataState {
   getAttendanceByDate: (date: string) => AttendanceRecord[];
   getAttendanceByDateAndType: (date: string, type: AttendanceType) => AttendanceRecord[];
 
+  // 일정 관리
+  addSchedule: (schedule: { title: string; description?: string; event_date: string; created_by?: string }) => Promise<void>;
+  deleteSchedule: (id: string) => Promise<void>;
+
   // 순위
   getIndividualRankings: () => IndividualRanking[];
   getClassRankings: () => ClassRanking[];
@@ -61,6 +68,7 @@ export const useDataStore = create<DataState>((set, get) => ({
   classes: [],
   familyGroups: [],
   attendanceRecords: [],
+  schedules: [],
   isLoading: false,
 
   // ============ 데이터 로드 ============
@@ -72,6 +80,7 @@ export const useDataStore = create<DataState>((set, get) => ({
       get().loadClasses(),
       get().loadAttendance(),
       get().loadFamilyGroups(),
+      get().loadSchedules(),
     ]);
     set({ isLoading: false });
   },
@@ -94,6 +103,11 @@ export const useDataStore = create<DataState>((set, get) => ({
   loadFamilyGroups: async () => {
     const { data } = await supabase.from('family_groups').select('*').order('family_name');
     if (data) set({ familyGroups: data });
+  },
+
+  loadSchedules: async () => {
+    const { data } = await supabase.from('schedules').select('*').order('event_date', { ascending: true });
+    if (data) set({ schedules: data });
   },
 
   // ============ 회원 관리 ============
@@ -189,6 +203,24 @@ export const useDataStore = create<DataState>((set, get) => ({
 
   getAttendanceByDateAndType: (date, type) =>
     get().attendanceRecords.filter((a) => a.attendance_date === date && a.attendance_type === type),
+
+  // ============ 일정 관리 ============
+
+  addSchedule: async (schedule) => {
+    const { data } = await supabase.from('schedules').insert({
+      title: schedule.title,
+      description: schedule.description || null,
+      event_date: schedule.event_date,
+      created_by: schedule.created_by || null,
+    }).select().single();
+
+    if (data) set((s) => ({ schedules: [...s.schedules, data] }));
+  },
+
+  deleteSchedule: async (id) => {
+    const { error } = await supabase.from('schedules').delete().eq('id', id);
+    if (!error) set((s) => ({ schedules: s.schedules.filter((sc) => sc.id !== id) }));
+  },
 
   // ============ 순위 ============
 

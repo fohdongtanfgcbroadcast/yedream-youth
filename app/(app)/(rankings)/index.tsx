@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
-import { Text, Card, SegmentedButtons, DataTable, Divider } from 'react-native-paper';
+import { View, ScrollView, StyleSheet, Alert, Platform } from 'react-native';
+import { Text, Card, SegmentedButtons, DataTable, Button, Divider } from 'react-native-paper';
+import { useAuthStore } from '../../../src/stores/auth-store';
 import { useDataStore } from '../../../src/stores/data-store';
 import { COLORS, ATTENDANCE_TYPES } from '../../../src/lib/constants';
+import * as XLSX from 'xlsx';
 
 function getRankLabel(rank: number): string {
   return `${rank}`;
@@ -10,6 +12,7 @@ function getRankLabel(rank: number): string {
 
 export default function RankingsScreen() {
   const [mode, setMode] = useState('individual');
+  const isAdmin = useAuthStore((s) => s.isAdmin)();
   const { getIndividualRankings, getClassRankings, members, attendanceRecords, classes } = useDataStore();
 
   const individualRankings = useMemo(() => getIndividualRankings(), [attendanceRecords, members]);
@@ -35,6 +38,20 @@ export default function RankingsScreen() {
       .sort((a, b) => b.total - a.total);
   }, [members, attendanceRecords, classes]);
 
+  // 반별 상세 통계
+  const classStats = useMemo(() => {
+    return classRankings.map((cls) => {
+      const cm = members.filter((m) => m.class_id === cls.class_id && m.is_active);
+      const cr = attendanceRecords.filter((a) => cm.some((m) => m.id === a.member_id));
+      return {
+        ...cls,
+        cholya: cr.filter((r) => r.attendance_type === '철야').length,
+        jeja: cr.filter((r) => r.attendance_type === '제자교육').length,
+        juil: cr.filter((r) => r.attendance_type === '주일예배').length,
+      };
+    });
+  }, [classRankings, members, attendanceRecords]);
+
   // 전체 통계 요약
   const totalStats = useMemo(() => {
     const totalMembers = members.filter((m) => m.is_active).length;
@@ -43,6 +60,50 @@ export default function RankingsScreen() {
     const juil = attendanceRecords.filter((r) => r.attendance_type === '주일예배').length;
     return { totalMembers, cholya, jeja, juil, total: cholya + jeja + juil };
   }, [members, attendanceRecords]);
+
+  // 엑셀 저장 기능
+  const exportToExcel = (type: 'individual' | 'class') => {
+    try {
+      let ws;
+      let filename;
+
+      if (type === 'individual') {
+        const data = individualStats.map((item, idx) => ({
+          '순위': idx + 1,
+          '이름': item.name,
+          '제자반': item.class_name,
+          '철야': item.cholya,
+          '제자교육': item.jeja,
+          '주일예배': item.juil,
+          '합계': item.total,
+        }));
+        ws = XLSX.utils.json_to_sheet(data);
+        filename = `개인별_출석_상세_${new Date().toISOString().split('T')[0]}.xlsx`;
+      } else {
+        const data = classStats.map((item) => ({
+          '등수': item.final_rank,
+          '제자반': item.class_name,
+          '인원': item.member_count,
+          '철야': item.cholya,
+          '제자교육': item.jeja,
+          '주일예배': item.juil,
+          '총점': item.total_points,
+          '출석률': `${item.attendance_rate}%`,
+        }));
+        ws = XLSX.utils.json_to_sheet(data);
+        filename = `반별_출석_상세_${new Date().toISOString().split('T')[0]}.xlsx`;
+      }
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+
+      // 웹에서 다운로드
+      XLSX.writeFile(wb, filename);
+      Alert.alert('완료', `${filename} 파일이 저장되었습니다.`);
+    } catch (e: any) {
+      Alert.alert('오류', '엑셀 저장에 실패했습니다: ' + e.message);
+    }
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -58,10 +119,10 @@ export default function RankingsScreen() {
         />
       </View>
 
-      {/* ============ 개인별 순위 ============ */}
+      {/* ============ 개인별 순위 (10등까지, 3등 강조) ============ */}
       {mode === 'individual' && (
         <Card style={styles.card}>
-          <Card.Title title="개인별 출석 순위" subtitle="총 출석 점수 기준" />
+          <Card.Title title="개인별 출석 순위" subtitle="총 출석 점수 기준 (TOP 10)" />
           <Card.Content>
             <DataTable>
               <DataTable.Header>
@@ -71,21 +132,24 @@ export default function RankingsScreen() {
                 <DataTable.Title numeric style={{ flex: 0.6 }}>점수</DataTable.Title>
               </DataTable.Header>
 
-              {individualRankings.map((item) => (
-                <DataTable.Row key={item.member_id}>
+              {individualRankings.slice(0, 10).map((item) => (
+                <DataTable.Row
+                  key={item.member_id}
+                  style={item.point_rank <= 3 ? styles.highlightRow : undefined}
+                >
                   <DataTable.Cell style={{ flex: 0.4 }}>
-                    <Text style={[styles.rankText, item.point_rank <= 3 && styles.topRank]}>
-                      {getRankLabel(item.point_rank)}
+                    <Text style={[styles.rankText, item.point_rank <= 3 && styles.topRank3]}>
+                      {item.point_rank <= 3 ? ['🥇', '🥈', '🥉'][item.point_rank - 1] : getRankLabel(item.point_rank)}
                     </Text>
                   </DataTable.Cell>
                   <DataTable.Cell style={{ flex: 1.2 }}>
-                    <Text style={styles.nameText}>{item.name}</Text>
+                    <Text style={[styles.nameText, item.point_rank <= 3 && { fontWeight: 'bold' }]}>{item.name}</Text>
                   </DataTable.Cell>
                   <DataTable.Cell style={{ flex: 1 }}>
                     <Text style={styles.classText}>{item.class_name || '-'}</Text>
                   </DataTable.Cell>
                   <DataTable.Cell numeric style={{ flex: 0.6 }}>
-                    <Text style={styles.scoreText}>{item.total_points}</Text>
+                    <Text style={[styles.scoreText, item.point_rank <= 3 && { fontSize: 17 }]}>{item.total_points}</Text>
                   </DataTable.Cell>
                 </DataTable.Row>
               ))}
@@ -94,7 +158,7 @@ export default function RankingsScreen() {
         </Card>
       )}
 
-      {/* ============ 반별 순위 ============ */}
+      {/* ============ 반별 순위 (모든 반, 2등 강조) ============ */}
       {mode === 'class' && (
         <>
           <Card style={styles.card}>
@@ -110,20 +174,23 @@ export default function RankingsScreen() {
                 </DataTable.Header>
 
                 {classRankings.map((item) => (
-                  <DataTable.Row key={item.class_id}>
+                  <DataTable.Row
+                    key={item.class_id}
+                    style={item.final_rank <= 2 ? styles.highlightRow : undefined}
+                  >
                     <DataTable.Cell style={{ flex: 0.4 }}>
-                      <Text style={[styles.rankText, item.final_rank <= 3 && styles.topRank]}>
-                        {getRankLabel(item.final_rank)}
+                      <Text style={[styles.rankText, item.final_rank <= 2 && styles.topRank2]}>
+                        {item.final_rank <= 2 ? ['🥇', '🥈'][item.final_rank - 1] : getRankLabel(item.final_rank)}
                       </Text>
                     </DataTable.Cell>
                     <DataTable.Cell style={{ flex: 1.2 }}>
-                      <Text style={styles.nameText}>{item.class_name}</Text>
+                      <Text style={[styles.nameText, item.final_rank <= 2 && { fontWeight: 'bold' }]}>{item.class_name}</Text>
                     </DataTable.Cell>
                     <DataTable.Cell numeric style={{ flex: 0.5 }}>
                       <Text>{item.member_count}</Text>
                     </DataTable.Cell>
                     <DataTable.Cell numeric style={{ flex: 0.6 }}>
-                      <Text style={styles.scoreText}>{item.total_points}</Text>
+                      <Text style={[styles.scoreText, item.final_rank <= 2 && { fontSize: 17 }]}>{item.total_points}</Text>
                     </DataTable.Cell>
                     <DataTable.Cell numeric style={{ flex: 0.7 }}>
                       <Text>{item.attendance_rate}%</Text>
@@ -184,51 +251,13 @@ export default function RankingsScreen() {
             </Card.Content>
           </Card>
 
-          {/* 전체 유형별 비율 그래프 */}
-          <Card style={styles.card}>
-            <Card.Title title="출석 유형별 비율" />
-            <Card.Content>
-              <View style={styles.pieChart}>
-                {[
-                  { label: '철야', value: totalStats.cholya, color: '#8E44AD' },
-                  { label: '제자교육', value: totalStats.jeja, color: '#2980B9' },
-                  { label: '주일예배', value: totalStats.juil, color: '#27AE60' },
-                ].map((item) => {
-                  const pct = totalStats.total > 0 ? Math.round((item.value / totalStats.total) * 100) : 0;
-                  return (
-                    <View key={item.label} style={styles.pieRow}>
-                      <View style={styles.pieLabelRow}>
-                        <View style={[styles.pieDot, { backgroundColor: item.color }]} />
-                        <Text style={styles.pieLabel}>{item.label}</Text>
-                        <Text style={styles.pieValue}>{item.value}건 ({pct}%)</Text>
-                      </View>
-                      <View style={styles.pieBarBg}>
-                        <View style={[styles.pieBarFill, { width: `${pct}%`, backgroundColor: item.color }]} />
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
-            </Card.Content>
-          </Card>
-
-          {/* 반별 막대 그래프 */}
+          {/* 반별 출석 점수 비교 (세로 막대 그래프) */}
           <Card style={styles.card}>
             <Card.Title title="반별 출석 점수 비교" />
             <Card.Content>
               {(() => {
-                const classData = classRankings.map((cls) => {
-                  const cm = members.filter((m) => m.class_id === cls.class_id && m.is_active);
-                  const cr = attendanceRecords.filter((a) => cm.some((m) => m.id === a.member_id));
-                  return {
-                    name: cls.class_name,
-                    cholya: cr.filter((r) => r.attendance_type === '철야').length,
-                    jeja: cr.filter((r) => r.attendance_type === '제자교육').length,
-                    juil: cr.filter((r) => r.attendance_type === '주일예배').length,
-                    total: cls.total_points,
-                  };
-                });
-                const maxTotal = Math.max(...classData.map((d) => d.total), 1);
+                const maxTotal = Math.max(...classStats.map((d) => d.total_points), 1);
+                const barMaxHeight = 160;
 
                 return (
                   <View>
@@ -239,112 +268,164 @@ export default function RankingsScreen() {
                       <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#27AE60' }]} /><Text style={styles.legendText}>주일예배</Text></View>
                     </View>
 
-                    {classData.map((cls) => (
-                      <View key={cls.name} style={styles.barGroup}>
-                        <Text style={styles.barLabel}>{cls.name}</Text>
-                        {/* 스택 바 */}
-                        <View style={styles.stackBarBg}>
-                          <View style={[styles.stackBarSegment, { width: `${(cls.cholya / maxTotal) * 100}%`, backgroundColor: '#8E44AD' }]} />
-                          <View style={[styles.stackBarSegment, { width: `${(cls.jeja / maxTotal) * 100}%`, backgroundColor: '#2980B9' }]} />
-                          <View style={[styles.stackBarSegment, { width: `${(cls.juil / maxTotal) * 100}%`, backgroundColor: '#27AE60' }]} />
-                        </View>
-                        <Text style={styles.barTotal}>{cls.total}점</Text>
-                      </View>
-                    ))}
+                    {/* 세로 막대 */}
+                    <View style={styles.verticalBarContainer}>
+                      {classStats.map((cls) => {
+                        const totalH = (cls.total_points / maxTotal) * barMaxHeight;
+                        const cholyaH = cls.total_points > 0 ? (cls.cholya / cls.total_points) * totalH : 0;
+                        const jejaH = cls.total_points > 0 ? (cls.jeja / cls.total_points) * totalH : 0;
+                        const juilH = cls.total_points > 0 ? (cls.juil / cls.total_points) * totalH : 0;
+
+                        return (
+                          <View key={cls.class_id} style={styles.verticalBarItem}>
+                            <Text style={styles.verticalBarValue}>{cls.total_points}</Text>
+                            <View style={[styles.verticalBarTrack, { height: barMaxHeight }]}>
+                              <View style={{ flex: 1 }} />
+                              <View style={[styles.verticalBarSegment, { height: juilH, backgroundColor: '#27AE60' }]} />
+                              <View style={[styles.verticalBarSegment, { height: jejaH, backgroundColor: '#2980B9' }]} />
+                              <View style={[styles.verticalBarSegment, { height: cholyaH, backgroundColor: '#8E44AD', borderTopLeftRadius: 4, borderTopRightRadius: 4 }]} />
+                            </View>
+                            <Text style={styles.verticalBarLabel}>{cls.class_name.replace('제자반 ', '')}</Text>
+                          </View>
+                        );
+                      })}
+                    </View>
                   </View>
                 );
               })()}
             </Card.Content>
           </Card>
 
-          {/* 개인별 TOP 10 막대 그래프 */}
+          {/* 반별 출석률 (세로 막대 그래프) */}
           <Card style={styles.card}>
-            <Card.Title title="개인별 출석 TOP 10" />
+            <Card.Title title="반별 출석률" />
             <Card.Content>
               {(() => {
-                const top10 = individualStats.slice(0, 10);
-                const maxPts = Math.max(...top10.map((d) => d.total), 1);
-
-                return top10.map((item, idx) => (
-                  <View key={item.id} style={styles.barGroup}>
-                    <View style={styles.barLabelRow}>
-                      <Text style={[styles.barRank, idx < 3 && { color: COLORS.secondary, fontWeight: 'bold' }]}>{idx + 1}</Text>
-                      <Text style={styles.barName}>{item.name}</Text>
-                      <Text style={styles.barClassName}>{item.class_name}</Text>
-                    </View>
-                    <View style={styles.stackBarBg}>
-                      <View style={[styles.stackBarSegment, { width: `${(item.cholya / maxPts) * 100}%`, backgroundColor: '#8E44AD' }]} />
-                      <View style={[styles.stackBarSegment, { width: `${(item.jeja / maxPts) * 100}%`, backgroundColor: '#2980B9' }]} />
-                      <View style={[styles.stackBarSegment, { width: `${(item.juil / maxPts) * 100}%`, backgroundColor: '#27AE60' }]} />
-                    </View>
-                    <Text style={styles.barTotal}>{item.total}점</Text>
+                const barMaxHeight = 140;
+                return (
+                  <View style={styles.verticalBarContainer}>
+                    {classRankings.map((cls) => {
+                      const h = (cls.attendance_rate / 100) * barMaxHeight;
+                      const color = cls.attendance_rate >= 80 ? '#27AE60' : cls.attendance_rate >= 50 ? '#F5A623' : '#E74C3C';
+                      return (
+                        <View key={cls.class_id} style={styles.verticalBarItem}>
+                          <Text style={[styles.verticalBarValue, { color }]}>{cls.attendance_rate}%</Text>
+                          <View style={[styles.verticalBarTrack, { height: barMaxHeight }]}>
+                            <View style={{ flex: 1 }} />
+                            <View style={[styles.verticalBarSegment, { height: h, backgroundColor: color, borderTopLeftRadius: 4, borderTopRightRadius: 4 }]} />
+                          </View>
+                          <Text style={styles.verticalBarLabel}>{cls.class_name.replace('제자반 ', '')}</Text>
+                        </View>
+                      );
+                    })}
                   </View>
-                ));
+                );
               })()}
             </Card.Content>
           </Card>
 
-          {/* 반별 출석률 비교 */}
+          {/* 개인별 점수 상세 */}
           <Card style={styles.card}>
-            <Card.Title title="반별 출석률" />
+            <Card.Title title="개인별 점수 상세" />
             <Card.Content>
-              {classRankings.map((cls) => (
-                <View key={cls.class_id} style={styles.barGroup}>
-                  <View style={styles.barLabelRow}>
-                    <Text style={styles.barName}>{cls.class_name}</Text>
-                    <Text style={styles.barClassName}>{cls.attendance_rate}%</Text>
+              {individualStats.map((item, idx) => (
+                <View key={item.id}>
+                  <View style={styles.individualDetailRow}>
+                    <View style={styles.individualDetailHeader}>
+                      <Text style={styles.individualDetailRank}>{idx + 1}</Text>
+                      <Text style={styles.individualDetailName}>{item.name}</Text>
+                      <Text style={styles.individualDetailClass}>{item.class_name}</Text>
+                    </View>
+                    <View style={styles.individualDetailScores}>
+                      <View style={[styles.individualScoreBox, { backgroundColor: '#8E44AD15' }]}>
+                        <Text style={[styles.individualScoreValue, { color: '#8E44AD' }]}>{item.cholya}</Text>
+                        <Text style={styles.individualScoreLabel}>철야</Text>
+                      </View>
+                      <View style={[styles.individualScoreBox, { backgroundColor: '#2980B915' }]}>
+                        <Text style={[styles.individualScoreValue, { color: '#2980B9' }]}>{item.jeja}</Text>
+                        <Text style={styles.individualScoreLabel}>제자교육</Text>
+                      </View>
+                      <View style={[styles.individualScoreBox, { backgroundColor: '#27AE6015' }]}>
+                        <Text style={[styles.individualScoreValue, { color: '#27AE60' }]}>{item.juil}</Text>
+                        <Text style={styles.individualScoreLabel}>주일예배</Text>
+                      </View>
+                      <View style={[styles.individualScoreBox, { backgroundColor: '#F5A62315' }]}>
+                        <Text style={[styles.individualScoreValue, { color: '#F5A623', fontWeight: 'bold' }]}>{item.total}</Text>
+                        <Text style={styles.individualScoreLabel}>합계</Text>
+                      </View>
+                    </View>
                   </View>
-                  <View style={styles.stackBarBg}>
-                    <View style={[styles.stackBarSegment, {
-                      width: `${cls.attendance_rate}%`,
-                      backgroundColor: cls.attendance_rate >= 80 ? '#27AE60' : cls.attendance_rate >= 50 ? '#F5A623' : '#E74C3C',
-                      borderRadius: 6,
-                    }]} />
-                  </View>
+                  {idx < individualStats.length - 1 && <Divider style={{ marginVertical: 8 }} />}
                 </View>
               ))}
             </Card.Content>
           </Card>
 
-          {/* 개인별 상세 표 */}
+          {/* 반별 상세 내역 */}
           <Card style={styles.card}>
-            <Card.Title title="개인별 점수 상세" />
+            <Card.Title title="반별 점수 상세" />
             <Card.Content>
-              <DataTable>
-                <DataTable.Header>
-                  <DataTable.Title style={{ flex: 1 }}>이름</DataTable.Title>
-                  <DataTable.Title style={{ flex: 0.8 }}>반</DataTable.Title>
-                  <DataTable.Title numeric style={{ flex: 0.5 }}>철야</DataTable.Title>
-                  <DataTable.Title numeric style={{ flex: 0.5 }}>제자</DataTable.Title>
-                  <DataTable.Title numeric style={{ flex: 0.5 }}>주일</DataTable.Title>
-                  <DataTable.Title numeric style={{ flex: 0.5 }}>합계</DataTable.Title>
-                </DataTable.Header>
-
-                {individualStats.map((item) => (
-                  <DataTable.Row key={item.id}>
-                    <DataTable.Cell style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 13 }}>{item.name}</Text>
-                    </DataTable.Cell>
-                    <DataTable.Cell style={{ flex: 0.8 }}>
-                      <Text style={{ fontSize: 11, color: COLORS.textSecondary }}>{item.class_name}</Text>
-                    </DataTable.Cell>
-                    <DataTable.Cell numeric style={{ flex: 0.5 }}>
-                      <Text style={{ color: '#8E44AD' }}>{item.cholya}</Text>
-                    </DataTable.Cell>
-                    <DataTable.Cell numeric style={{ flex: 0.5 }}>
-                      <Text style={{ color: '#2980B9' }}>{item.jeja}</Text>
-                    </DataTable.Cell>
-                    <DataTable.Cell numeric style={{ flex: 0.5 }}>
-                      <Text style={{ color: '#27AE60' }}>{item.juil}</Text>
-                    </DataTable.Cell>
-                    <DataTable.Cell numeric style={{ flex: 0.5 }}>
-                      <Text style={{ fontWeight: 'bold' }}>{item.total}</Text>
-                    </DataTable.Cell>
-                  </DataTable.Row>
-                ))}
-              </DataTable>
+              {classStats.map((item, idx) => (
+                <View key={item.class_id}>
+                  <View style={styles.individualDetailRow}>
+                    <View style={styles.individualDetailHeader}>
+                      <Text style={styles.individualDetailRank}>{item.final_rank}</Text>
+                      <Text style={styles.individualDetailName}>{item.class_name}</Text>
+                      <Text style={styles.individualDetailClass}>{item.member_count}명 | 출석률 {item.attendance_rate}%</Text>
+                    </View>
+                    <View style={styles.individualDetailScores}>
+                      <View style={[styles.individualScoreBox, { backgroundColor: '#8E44AD15' }]}>
+                        <Text style={[styles.individualScoreValue, { color: '#8E44AD' }]}>{item.cholya}</Text>
+                        <Text style={styles.individualScoreLabel}>철야</Text>
+                      </View>
+                      <View style={[styles.individualScoreBox, { backgroundColor: '#2980B915' }]}>
+                        <Text style={[styles.individualScoreValue, { color: '#2980B9' }]}>{item.jeja}</Text>
+                        <Text style={styles.individualScoreLabel}>제자교육</Text>
+                      </View>
+                      <View style={[styles.individualScoreBox, { backgroundColor: '#27AE6015' }]}>
+                        <Text style={[styles.individualScoreValue, { color: '#27AE60' }]}>{item.juil}</Text>
+                        <Text style={styles.individualScoreLabel}>주일예배</Text>
+                      </View>
+                      <View style={[styles.individualScoreBox, { backgroundColor: '#F5A62315' }]}>
+                        <Text style={[styles.individualScoreValue, { color: '#F5A623', fontWeight: 'bold' }]}>{item.total_points}</Text>
+                        <Text style={styles.individualScoreLabel}>합계</Text>
+                      </View>
+                    </View>
+                  </View>
+                  {idx < classStats.length - 1 && <Divider style={{ marginVertical: 8 }} />}
+                </View>
+              ))}
             </Card.Content>
           </Card>
+
+          {/* 엑셀 저장 (관리자만) */}
+          {isAdmin && (
+            <Card style={styles.card}>
+              <Card.Title title="데이터 내보내기" subtitle="엑셀 파일로 저장" />
+              <Card.Content>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <Button
+                    mode="contained"
+                    icon="file-excel"
+                    onPress={() => exportToExcel('individual')}
+                    style={{ flex: 1, borderRadius: 8 }}
+                    buttonColor="#27AE60"
+                  >
+                    개인별 저장
+                  </Button>
+                  <Button
+                    mode="contained"
+                    icon="file-excel"
+                    onPress={() => exportToExcel('class')}
+                    style={{ flex: 1, borderRadius: 8 }}
+                    buttonColor="#2980B9"
+                  >
+                    반별 저장
+                  </Button>
+                </View>
+              </Card.Content>
+            </Card>
+          )}
         </>
       )}
 
@@ -358,7 +439,9 @@ const styles = StyleSheet.create({
   toggleContainer: { padding: 16 },
   card: { margin: 16, marginBottom: 0, borderRadius: 12, elevation: 2 },
   rankText: { fontSize: 16, fontWeight: 'bold', color: COLORS.text },
-  topRank: { color: COLORS.secondary, fontSize: 18 },
+  topRank3: { color: COLORS.secondary, fontSize: 20 },
+  topRank2: { color: COLORS.secondary, fontSize: 20 },
+  highlightRow: { backgroundColor: '#FEF3E215' },
   nameText: { fontSize: 14, fontWeight: '600', color: COLORS.text },
   classText: { fontSize: 13, color: COLORS.textSecondary },
   scoreText: { fontSize: 15, fontWeight: 'bold', color: COLORS.primary },
@@ -373,28 +456,26 @@ const styles = StyleSheet.create({
   statNumber: { fontSize: 22, fontWeight: 'bold' },
   statLabel: { fontSize: 11, color: COLORS.textSecondary, marginTop: 4 },
   statSubtext: { textAlign: 'center', color: COLORS.textSecondary, fontSize: 13, marginTop: 12 },
-  // 비율 바 차트
-  pieChart: { gap: 12 },
-  pieRow: {},
-  pieLabelRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  pieDot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
-  pieLabel: { fontSize: 13, fontWeight: '600', color: COLORS.text, flex: 1 },
-  pieValue: { fontSize: 13, color: COLORS.textSecondary },
-  pieBarBg: { height: 20, backgroundColor: '#F0F0F0', borderRadius: 10, overflow: 'hidden' },
-  pieBarFill: { height: 20, borderRadius: 10 },
   // 범례
   chartLegend: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginBottom: 16 },
   legendItem: { flexDirection: 'row', alignItems: 'center' },
   legendDot: { width: 8, height: 8, borderRadius: 4, marginRight: 4 },
   legendText: { fontSize: 11, color: COLORS.textSecondary },
-  // 막대 그래프
-  barGroup: { marginBottom: 12 },
-  barLabel: { fontSize: 14, fontWeight: '600', color: COLORS.primary, marginBottom: 4 },
-  barLabelRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4, gap: 6 },
-  barRank: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary, width: 20 },
-  barName: { fontSize: 13, fontWeight: '600', color: COLORS.text },
-  barClassName: { fontSize: 11, color: COLORS.textSecondary },
-  barTotal: { fontSize: 12, fontWeight: 'bold', color: COLORS.text, marginTop: 2, textAlign: 'right' },
-  stackBarBg: { height: 24, backgroundColor: '#F0F0F0', borderRadius: 12, overflow: 'hidden', flexDirection: 'row' },
-  stackBarSegment: { height: 24 },
+  // 세로 막대 그래프
+  verticalBarContainer: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end', paddingTop: 8 },
+  verticalBarItem: { alignItems: 'center', flex: 1 },
+  verticalBarValue: { fontSize: 13, fontWeight: 'bold', color: COLORS.text, marginBottom: 4 },
+  verticalBarTrack: { width: 36, backgroundColor: '#F0F0F0', borderRadius: 4, overflow: 'hidden', justifyContent: 'flex-end' },
+  verticalBarSegment: { width: '100%' },
+  verticalBarLabel: { fontSize: 11, color: COLORS.textSecondary, marginTop: 6, textAlign: 'center' },
+  // 개인별 상세
+  individualDetailRow: { paddingVertical: 4 },
+  individualDetailHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  individualDetailRank: { fontSize: 14, fontWeight: 'bold', color: COLORS.textSecondary, width: 28 },
+  individualDetailName: { fontSize: 15, fontWeight: '600', color: COLORS.text, marginRight: 8 },
+  individualDetailClass: { fontSize: 12, color: COLORS.textSecondary },
+  individualDetailScores: { flexDirection: 'row', gap: 6 },
+  individualScoreBox: { flex: 1, borderRadius: 8, padding: 8, alignItems: 'center' },
+  individualScoreValue: { fontSize: 18, fontWeight: '600' },
+  individualScoreLabel: { fontSize: 10, color: COLORS.textSecondary, marginTop: 2 },
 });

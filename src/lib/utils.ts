@@ -89,3 +89,29 @@ export function formatWeekRange(sundayDate: Date): string {
   const { friday, sunday } = getWeekDates(sundayDate);
   return `${formatShortDate(friday)}(금) ~ ${formatShortDate(sunday)}(일)`;
 }
+
+// ============ 로컬 스토리지 ============
+
+export const storage = {
+  getItem: (key: string): string | null => {
+    try { return localStorage.getItem(key); } catch { return null; }
+  },
+  setItem: (key: string, value: string): void => {
+    try { localStorage.setItem(key, value); } catch {}
+  },
+  removeItem: (key: string): void => {
+    try { localStorage.removeItem(key); } catch {}
+  },
+};
+
+// ============ 캘린더 유틸 ============
+
+// 특정 월의 일수
+export function getDaysInMonth(year: number, month: number): number {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+// 특정 월의 첫째 날 요일 (0=일)
+export function getFirstDayOfMonth(year: number, month: number): number {
+  return new Date(year, month, 1).getDay();
+}

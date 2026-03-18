@@ -38,6 +38,7 @@ export default function AdminScreen() {
   const [accountEmail, setAccountEmail] = useState('');
   const [accountPassword, setAccountPassword] = useState('');
   const [accountName, setAccountName] = useState('');
+  const [accountPhone, setAccountPhone] = useState('');
   const [accountClassIds, setAccountClassIds] = useState<string[]>([]);
 
   // 알림 설정 폼
@@ -130,15 +131,14 @@ export default function AdminScreen() {
     );
   };
 
-  const toggleEditClass = (classId: string) => {
-    setEditClassIds((prev) =>
-      prev.includes(classId) ? prev.filter((id) => id !== classId) : [...prev, classId]
-    );
-  };
 
   const handleCreateAccount = async () => {
     if (!accountEmail.trim() || !accountName.trim() || !accountPassword.trim()) {
       Alert.alert('알림', '이메일, 비밀번호, 이름을 모두 입력해주세요.');
+      return;
+    }
+    if (!accountPhone.trim()) {
+      Alert.alert('알림', '휴대폰 번호를 입력해주세요.');
       return;
     }
     if (accountClassIds.length === 0) {
@@ -150,14 +150,15 @@ export default function AdminScreen() {
       accountEmail.trim(),
       accountPassword,
       accountName.trim(),
+      accountPhone.trim(),
       accountClassIds,
     );
     if (!result.success) {
       Alert.alert('오류', result.error || '계정 생성에 실패했습니다.');
       return;
     }
-    Alert.alert('완료', `${accountName} 강사 계정이 생성되었습니다.\n\n이메일: ${accountEmail}\n담당반: ${classNames}\n\n* 이메일 인증 후 로그인 가능합니다.`);
-    setAccountEmail(''); setAccountPassword(''); setAccountName(''); setAccountClassIds([]);
+    Alert.alert('완료', `${accountName} 강사 계정이 생성되었습니다.\n\n이메일: ${accountEmail}\n휴대폰: ${accountPhone}\n담당반: ${classNames}\n\n* 최초 로그인 시 비밀번호 변경이 요청됩니다.`);
+    setAccountEmail(''); setAccountPassword(''); setAccountName(''); setAccountPhone(''); setAccountClassIds([]);
   };
 
   const handleSaveNotification = () => {
@@ -463,6 +464,7 @@ export default function AdminScreen() {
             <TextInput label="이메일 *" value={accountEmail} onChangeText={setAccountEmail} mode="outlined" style={styles.input} keyboardType="email-address" autoCapitalize="none" />
             <TextInput label="비밀번호 *" value={accountPassword} onChangeText={setAccountPassword} mode="outlined" style={styles.input} />
             <TextInput label="이름 *" value={accountName} onChangeText={setAccountName} mode="outlined" style={styles.input} />
+            <TextInput label="휴대폰 번호 *" value={accountPhone} onChangeText={setAccountPhone} mode="outlined" style={styles.input} keyboardType="phone-pad" placeholder="예: 010-1234-5678" />
 
             <Text style={styles.fieldLabel}>담당 제자반 (복수 선택 가능)</Text>
             <View style={styles.classSelector}>
@@ -485,7 +487,7 @@ export default function AdminScreen() {
             </Button>
 
             <Text style={{ fontSize: 11, color: COLORS.textSecondary, marginTop: 12, textAlign: 'center' }}>
-              * 생성된 계정은 이메일 인증 후 로그인 가능합니다
+              * 최초 로그인 시 비밀번호 변경이 요청됩니다{'\n'}* 휴대폰 번호는 비밀번호 재설정에 사용됩니다
             </Text>
           </Card.Content>
         </Card>

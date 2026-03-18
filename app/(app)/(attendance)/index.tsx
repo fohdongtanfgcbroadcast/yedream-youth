@@ -20,14 +20,15 @@ export default function AttendanceScreen() {
   // 주간 기준 일요일
   const [currentSunday, setCurrentSunday] = useState(() => getSundayOfWeek(new Date()));
   const [showHistory, setShowHistory] = useState(false);
+  const [showMissing, setShowMissing] = useState(false);
 
   // 이번 주 금요일/일요일 날짜
   const weekDates = useMemo(() => getWeekDates(currentSunday), [currentSunday]);
 
   // 각 유형별 체크 상태
-  const [checkedCholya, setCheckedCholya] = useState<Set<string>>(new Set());     // 철야
-  const [checkedJeja, setCheckedJeja] = useState<Set<string>>(new Set());         // 제자교육
-  const [checkedJuil, setCheckedJuil] = useState<Set<string>>(new Set());         // 주일예배
+  const [checkedCholya, setCheckedCholya] = useState<Set<string>>(new Set());
+  const [checkedJeja, setCheckedJeja] = useState<Set<string>>(new Set());
+  const [checkedJuil, setCheckedJuil] = useState<Set<string>>(new Set());
 
   // 기존 출석 기록
   const existingCholya = useMemo(
@@ -51,20 +52,46 @@ export default function AttendanceScreen() {
     return active;
   }, [classes, isAdmin, assignedClassIds]);
 
+  // ============ 출석 기록 미입력 주차 계산 ============
+  const missingWeeks = useMemo(() => {
+    const missing: { sunday: Date; fridayStr: string; sundayStr: string; label: string }[] = [];
+    const now = new Date();
+    const thisSunday = getSundayOfWeek(now);
+
+    // 최근 8주 확인
+    for (let i = 1; i <= 8; i++) {
+      const sun = shiftWeek(thisSunday, -i);
+      const dates = getWeekDates(sun);
+
+      // 해당 주에 어떤 출석 기록이라도 있는지 확인
+      const hasAny = attendanceRecords.some((a) => {
+        return a.attendance_date === dates.friday || a.attendance_date === dates.sunday;
+      });
+
+      if (!hasAny) {
+        missing.push({
+          sunday: sun,
+          fridayStr: dates.friday,
+          sundayStr: dates.sunday,
+          label: formatWeekRange(sun),
+        });
+      }
+    }
+    return missing;
+  }, [attendanceRecords]);
+
   const toggleCheck = (
     memberId: string,
     checked: Set<string>,
     setChecked: React.Dispatch<React.SetStateAction<Set<string>>>,
     existing: Set<string>,
   ) => {
-    // 관리자/강사는 기존 출석도 해제 가능 (수정)
     if (existing.has(memberId) && (isAdmin || isInstructor)) {
       Alert.alert('출석 수정', '이미 출석 처리된 항목을 취소하시겠습니까?', [
         { text: '아니오', style: 'cancel' },
         {
           text: '출석 취소', style: 'destructive',
           onPress: () => {
-            // 해당 출석 기록 삭제
             const type: AttendanceType = checked === checkedCholya ? '철야' : checked === checkedJeja ? '제자교육' : '주일예배';
             const date = type === '철야' ? weekDates.friday : weekDates.sunday;
             const record = attendanceRecords.find(
@@ -119,6 +146,14 @@ export default function AttendanceScreen() {
     setCheckedJuil(new Set());
   };
 
+  const goToWeek = (sunday: Date) => {
+    setCurrentSunday(sunday);
+    setCheckedCholya(new Set());
+    setCheckedJeja(new Set());
+    setCheckedJuil(new Set());
+    setShowMissing(false);
+  };
+
   const totalNewChecks = checkedCholya.size + checkedJeja.size + checkedJuil.size;
 
   // 출석 이력
@@ -168,6 +203,42 @@ export default function AttendanceScreen() {
             </Card>
           );
         })}
+        <View style={{ height: 24 }} />
+      </ScrollView>
+    );
+  }
+
+  // ============ 출석 기록 미입력 화면 ============
+  if (showMissing) {
+    return (
+      <ScrollView style={styles.container}>
+        <View style={styles.header}>
+          <Button icon="arrow-left" onPress={() => setShowMissing(false)}>출석 입력</Button>
+          <Text style={styles.headerTitle}>출석 기록 미입력</Text>
+        </View>
+
+        {missingWeeks.length === 0 ? (
+          <Card style={styles.card}>
+            <Card.Content>
+              <Text style={styles.emptyText}>최근 8주 내 미입력 주차가 없습니다.</Text>
+            </Card.Content>
+          </Card>
+        ) : (
+          missingWeeks.map((week) => (
+            <TouchableOpacity key={week.sundayStr} onPress={() => goToWeek(week.sunday)}>
+              <Card style={[styles.missingCard]}>
+                <Card.Content style={styles.missingRow}>
+                  <View style={styles.missingDot} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.missingLabel}>{week.label}</Text>
+                    <Text style={styles.missingDesc}>출석 기록이 없습니다</Text>
+                  </View>
+                  <Text style={{ color: COLORS.primary, fontWeight: '600' }}>입력하기 ›</Text>
+                </Card.Content>
+              </Card>
+            </TouchableOpacity>
+          ))
+        )}
         <View style={{ height: 24 }} />
       </ScrollView>
     );
@@ -251,9 +322,20 @@ export default function AttendanceScreen() {
         </Card.Content>
       </Card>
 
-      <Button mode="text" icon="history" onPress={() => setShowHistory(true)} style={{ marginHorizontal: 16 }}>
-        출석 이력 보기 / 수정
-      </Button>
+      <View style={styles.actionRow}>
+        <Button mode="text" icon="history" onPress={() => setShowHistory(true)} compact>
+          출석 이력
+        </Button>
+        <Button
+          mode="text"
+          icon="alert-circle-outline"
+          onPress={() => setShowMissing(true)}
+          compact
+          textColor={missingWeeks.length > 0 ? COLORS.danger : COLORS.textSecondary}
+        >
+          미입력 {missingWeeks.length > 0 ? `(${missingWeeks.length})` : ''}
+        </Button>
+      </View>
 
       {/* 철야 - 금요일 */}
       <Card style={styles.card}>
@@ -300,6 +382,7 @@ const styles = StyleSheet.create({
   weekRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   weekTitle: { fontSize: 18, fontWeight: 'bold', color: COLORS.text },
   weekRange: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
+  actionRow: { flexDirection: 'row', justifyContent: 'space-around', marginHorizontal: 16, marginTop: 8 },
   typeHeader: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, marginBottom: 8 },
   typeTitle: { fontSize: 16, fontWeight: 'bold' },
   typeDate: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
@@ -314,4 +397,11 @@ const styles = StyleSheet.create({
   historyRow: { flexDirection: 'row', alignItems: 'center' },
   historyName: { fontSize: 15, fontWeight: '600', color: COLORS.text },
   historyDate: { fontSize: 12, color: COLORS.textSecondary },
+  emptyText: { color: COLORS.textSecondary, textAlign: 'center', paddingVertical: 16 },
+  // 미입력 스타일
+  missingCard: { marginHorizontal: 16, marginTop: 8, borderRadius: 10, borderLeftWidth: 4, borderLeftColor: COLORS.danger },
+  missingRow: { flexDirection: 'row', alignItems: 'center' },
+  missingDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.danger, marginRight: 12 },
+  missingLabel: { fontSize: 15, fontWeight: '600', color: COLORS.text },
+  missingDesc: { fontSize: 12, color: COLORS.danger, marginTop: 2 },
 });

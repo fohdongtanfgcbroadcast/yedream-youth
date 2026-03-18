@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
-import { Text, Card, Button, Chip, Avatar } from 'react-native-paper';
+import React, { useEffect, useState, useMemo } from 'react';
+import { View, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { Text, Card, Button, Chip, Avatar, TextInput, Modal, Portal } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../src/stores/auth-store';
 import { useDataStore } from '../../../src/stores/data-store';
 import { COLORS, ATTENDANCE_TYPES } from '../../../src/lib/constants';
-import { formatDate } from '../../../src/lib/utils';
+import { formatDate, getDaysInMonth, getFirstDayOfMonth, toDateString } from '../../../src/lib/utils';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -20,9 +20,85 @@ export default function HomeScreen() {
   const birthdayMembers = useDataStore((s) => s.getBirthdayMembers)();
   const members = useDataStore((s) => s.members);
   const classes = useDataStore((s) => s.classes);
+  const schedules = useDataStore((s) => s.schedules);
+  const addSchedule = useDataStore((s) => s.addSchedule);
+  const deleteSchedule = useDataStore((s) => s.deleteSchedule);
 
   const today = new Date();
   const dayNames = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+
+  // 캘린더 상태
+  const [calYear, setCalYear] = useState(today.getFullYear());
+  const [calMonth, setCalMonth] = useState(today.getMonth());
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  // 일정 추가 모달
+  const [showAddSchedule, setShowAddSchedule] = useState(false);
+  const [scheduleTitle, setScheduleTitle] = useState('');
+  const [scheduleDesc, setScheduleDesc] = useState('');
+
+  const daysInMonth = getDaysInMonth(calYear, calMonth);
+  const firstDay = getFirstDayOfMonth(calYear, calMonth);
+
+  // 해당 월의 일정 맵
+  const monthSchedules = useMemo(() => {
+    const map: Record<string, typeof schedules> = {};
+    schedules.forEach((s) => {
+      const d = s.event_date;
+      if (d.startsWith(`${calYear}-${String(calMonth + 1).padStart(2, '0')}`)) {
+        if (!map[d]) map[d] = [];
+        map[d].push(s);
+      }
+    });
+    return map;
+  }, [schedules, calYear, calMonth]);
+
+  const selectedSchedules = selectedDate ? (monthSchedules[selectedDate] || []) : [];
+
+  const goMonth = (dir: number) => {
+    let m = calMonth + dir;
+    let y = calYear;
+    if (m < 0) { m = 11; y--; }
+    if (m > 11) { m = 0; y++; }
+    setCalMonth(m);
+    setCalYear(y);
+    setSelectedDate(null);
+  };
+
+  const handleAddSchedule = () => {
+    if (!scheduleTitle.trim()) {
+      Alert.alert('알림', '일정 제목을 입력해주세요.');
+      return;
+    }
+    if (!selectedDate) return;
+    addSchedule({
+      title: scheduleTitle.trim(),
+      description: scheduleDesc || undefined,
+      event_date: selectedDate,
+      created_by: profile?.id,
+    });
+    Alert.alert('완료', '일정이 등록되었습니다.');
+    setScheduleTitle('');
+    setScheduleDesc('');
+    setShowAddSchedule(false);
+  };
+
+  const handleDeleteSchedule = (id: string) => {
+    Alert.alert('삭제', '이 일정을 삭제하시겠습니까?', [
+      { text: '취소', style: 'cancel' },
+      { text: '삭제', style: 'destructive', onPress: () => deleteSchedule(id) },
+    ]);
+  };
+
+  // 캘린더 날짜 배열
+  const calendarDays = useMemo(() => {
+    const days: (number | null)[] = [];
+    for (let i = 0; i < firstDay; i++) days.push(null);
+    for (let i = 1; i <= daysInMonth; i++) days.push(i);
+    return days;
+  }, [firstDay, daysInMonth]);
+
+  const todayStr = toDateString(today);
 
   return (
     <ScrollView style={styles.container}>
@@ -51,6 +127,101 @@ export default function HomeScreen() {
           </Card.Content>
         </Card>
       </View>
+
+      {/* 캘린더 */}
+      <Card style={styles.card}>
+        <Card.Content>
+          {/* 캘린더 헤더 */}
+          <View style={styles.calHeader}>
+            <TouchableOpacity onPress={() => goMonth(-1)}>
+              <Text style={styles.calNav}>◀</Text>
+            </TouchableOpacity>
+            <Text style={styles.calTitle}>{calYear}년 {calMonth + 1}월</Text>
+            <TouchableOpacity onPress={() => goMonth(1)}>
+              <Text style={styles.calNav}>▶</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* 요일 헤더 */}
+          <View style={styles.calWeekRow}>
+            {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
+              <Text key={d} style={[styles.calWeekDay, i === 0 && { color: COLORS.danger }, i === 6 && { color: COLORS.primary }]}>{d}</Text>
+            ))}
+          </View>
+
+          {/* 날짜 그리드 */}
+          <View style={styles.calGrid}>
+            {calendarDays.map((day, idx) => {
+              if (day === null) {
+                return <View key={`empty-${idx}`} style={styles.calCell} />;
+              }
+              const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              const isToday = dateStr === todayStr;
+              const isSelected = dateStr === selectedDate;
+              const hasSchedule = monthSchedules[dateStr] && monthSchedules[dateStr].length > 0;
+              const dayOfWeek = (firstDay + day - 1) % 7;
+
+              return (
+                <TouchableOpacity
+                  key={day}
+                  style={[
+                    styles.calCell,
+                    isToday && styles.calCellToday,
+                    isSelected && styles.calCellSelected,
+                  ]}
+                  onPress={() => setSelectedDate(dateStr)}
+                >
+                  <Text style={[
+                    styles.calDay,
+                    isToday && styles.calDayToday,
+                    isSelected && styles.calDaySelected,
+                    dayOfWeek === 0 && { color: COLORS.danger },
+                    dayOfWeek === 6 && { color: COLORS.primary },
+                    (isToday || isSelected) && { color: '#FFF' },
+                  ]}>
+                    {day}
+                  </Text>
+                  {hasSchedule && <View style={styles.calDot} />}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* 선택된 날짜의 일정 */}
+          {selectedDate && (
+            <View style={styles.scheduleSection}>
+              <View style={styles.scheduleSectionHeader}>
+                <Text style={styles.scheduleDate}>
+                  {parseInt(selectedDate.split('-')[1])}월 {parseInt(selectedDate.split('-')[2])}일 일정
+                </Text>
+                {isAdmin && (
+                  <Button mode="contained" compact onPress={() => setShowAddSchedule(true)} icon="plus" labelStyle={{ fontSize: 12 }}>
+                    추가
+                  </Button>
+                )}
+              </View>
+              {selectedSchedules.length > 0 ? (
+                selectedSchedules.map((s) => (
+                  <View key={s.id} style={styles.scheduleItem}>
+                    <View style={styles.scheduleItemDot} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.scheduleItemTitle}>{s.title}</Text>
+                      {s.description && <Text style={styles.scheduleItemDesc}>{s.description}</Text>}
+                    </View>
+                    {isAdmin && (
+                      <TouchableOpacity onPress={() => handleDeleteSchedule(s.id)}>
+                        <Text style={{ color: COLORS.danger, fontSize: 18 }}>×</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.emptyText}>등록된 일정이 없습니다</Text>
+              )}
+            </View>
+          )}
+        </Card.Content>
+      </Card>
 
       {/* 오늘의 출석 */}
       <Card style={styles.card}>
@@ -143,6 +314,33 @@ export default function HomeScreen() {
       </Card>
 
       <View style={{ height: 24 }} />
+
+      {/* 일정 추가 모달 */}
+      <Portal>
+        <Modal visible={showAddSchedule} onDismiss={() => setShowAddSchedule(false)} contentContainerStyle={styles.modal}>
+          <Text style={styles.modalTitle}>일정 추가</Text>
+          <Text style={styles.modalDesc}>{selectedDate}</Text>
+          <TextInput
+            label="일정 제목 *"
+            value={scheduleTitle}
+            onChangeText={setScheduleTitle}
+            mode="outlined"
+            style={{ marginBottom: 12 }}
+          />
+          <TextInput
+            label="설명 (선택)"
+            value={scheduleDesc}
+            onChangeText={setScheduleDesc}
+            mode="outlined"
+            style={{ marginBottom: 12 }}
+            multiline
+          />
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Button mode="outlined" onPress={() => setShowAddSchedule(false)} style={{ flex: 1 }}>취소</Button>
+            <Button mode="contained" onPress={handleAddSchedule} style={{ flex: 1 }}>등록</Button>
+          </View>
+        </Modal>
+      </Portal>
     </ScrollView>
   );
 }
@@ -168,4 +366,29 @@ const styles = StyleSheet.create({
   birthdayDate: { fontSize: 13, color: COLORS.textSecondary },
   quickActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   quickButton: { borderRadius: 8 },
+  // 캘린더
+  calHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  calTitle: { fontSize: 18, fontWeight: 'bold', color: COLORS.text },
+  calNav: { fontSize: 18, color: COLORS.primary, padding: 8 },
+  calWeekRow: { flexDirection: 'row', marginBottom: 4 },
+  calWeekDay: { flex: 1, textAlign: 'center', fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
+  calGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  calCell: { width: '14.28%', alignItems: 'center', paddingVertical: 6, borderRadius: 8 },
+  calCellToday: { backgroundColor: COLORS.primary },
+  calCellSelected: { backgroundColor: COLORS.secondary },
+  calDay: { fontSize: 14, color: COLORS.text },
+  calDayToday: { color: '#FFF', fontWeight: 'bold' },
+  calDaySelected: { color: '#FFF', fontWeight: 'bold' },
+  calDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: COLORS.secondary, marginTop: 2 },
+  // 일정
+  scheduleSection: { marginTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 12 },
+  scheduleSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  scheduleDate: { fontSize: 15, fontWeight: '600', color: COLORS.text },
+  scheduleItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, gap: 10 },
+  scheduleItemDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.primary },
+  scheduleItemTitle: { fontSize: 15, fontWeight: '600', color: COLORS.text },
+  scheduleItemDesc: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
+  modal: { backgroundColor: '#FFF', margin: 24, padding: 24, borderRadius: 16 },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: COLORS.text, marginBottom: 4 },
+  modalDesc: { fontSize: 14, color: COLORS.textSecondary, marginBottom: 16 },
 });
