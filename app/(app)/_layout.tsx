@@ -60,14 +60,12 @@ export default function AppLayout() {
           tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="magnify" size={size} color={color} />,
         }}
       />
-      {/* 관리자만 관리 탭 노출 */}
       <Tabs.Screen
         name="(admin)"
         options={{
-          title: '관리',
-          headerTitle: '관리 메뉴',
-          tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="cog" size={size} color={color} />,
-          href: isAdmin ? undefined : null,
+          title: '더보기',
+          headerTitle: isAdmin ? '관리 메뉴' : '설정',
+          tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="dots-horizontal" size={size} color={color} />,
         }}
       />
       <Tabs.Screen name="(members)" options={{ href: null }} />

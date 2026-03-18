@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../src/stores/auth-store';
 import { useDataStore } from '../../../src/stores/data-store';
 import { COLORS, ROLES } from '../../../src/lib/constants';
-import { formatDate, calculateAge } from '../../../src/lib/utils';
+import { formatDate, calculateAge, storage } from '../../../src/lib/utils';
 
 type AdminSection = 'menu' | 'members' | 'classes' | 'addMember' | 'addClass' | 'editMember' | 'newFamily' | 'accounts' | 'notifications';
 
@@ -121,7 +121,17 @@ export default function AdminScreen() {
   const handleLogout = () => {
     Alert.alert('로그아웃', '로그아웃 하시겠습니까?', [
       { text: '취소', style: 'cancel' },
-      { text: '로그아웃', onPress: () => { logout(); router.replace('/sign-in'); } },
+      {
+        text: '로그아웃',
+        onPress: async () => {
+          // 자동 로그인 정보 삭제
+          storage.removeItem('auto_login');
+          storage.removeItem('autoLogin_email');
+          storage.removeItem('autoLogin_password');
+          await logout();
+          router.replace('/sign-in');
+        },
+      },
     ]);
   };
 
@@ -185,47 +195,49 @@ export default function AdminScreen() {
           </Card.Content>
         </Card>
 
-        <Card style={styles.card}>
-          <List.Item
-            title="새가족 등록"
-            description="새로운 청년 등록"
-            left={(props) => <List.Icon {...props} icon="account-plus" color={COLORS.success} />}
-            right={(props) => <List.Icon {...props} icon="chevron-right" />}
-            onPress={() => { resetForm(); setSection('newFamily'); }}
-          />
-          <Divider />
-          <List.Item
-            title="회원 관리"
-            description={`${members.filter((m) => m.is_active).length}명 | 정보 수정/삭제`}
-            left={(props) => <List.Icon {...props} icon="account-group" />}
-            right={(props) => <List.Icon {...props} icon="chevron-right" />}
-            onPress={() => setSection('members')}
-          />
-          <Divider />
-          <List.Item
-            title="제자반 관리"
-            description={`${classes.filter((c) => c.is_active).length}개`}
-            left={(props) => <List.Icon {...props} icon="school" />}
-            right={(props) => <List.Icon {...props} icon="chevron-right" />}
-            onPress={() => setSection('classes')}
-          />
-          <Divider />
-          <List.Item
-            title="계정 관리"
-            description="사용자 계정 생성/역할 설정"
-            left={(props) => <List.Icon {...props} icon="account-cog" />}
-            right={(props) => <List.Icon {...props} icon="chevron-right" />}
-            onPress={() => setSection('accounts')}
-          />
-          <Divider />
-          <List.Item
-            title="알림 설정"
-            description="예약 알림 관리"
-            left={(props) => <List.Icon {...props} icon="bell-ring" />}
-            right={(props) => <List.Icon {...props} icon="chevron-right" />}
-            onPress={() => setSection('notifications')}
-          />
-        </Card>
+        {isAdmin && (
+          <Card style={styles.card}>
+            <List.Item
+              title="새가족 등록"
+              description="새로운 청년 등록"
+              left={(props) => <List.Icon {...props} icon="account-plus" color={COLORS.success} />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => { resetForm(); setSection('newFamily'); }}
+            />
+            <Divider />
+            <List.Item
+              title="회원 관리"
+              description={`${members.filter((m) => m.is_active).length}명 | 정보 수정/삭제`}
+              left={(props) => <List.Icon {...props} icon="account-group" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => setSection('members')}
+            />
+            <Divider />
+            <List.Item
+              title="제자반 관리"
+              description={`${classes.filter((c) => c.is_active).length}개`}
+              left={(props) => <List.Icon {...props} icon="school" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => setSection('classes')}
+            />
+            <Divider />
+            <List.Item
+              title="계정 관리"
+              description="사용자 계정 생성/역할 설정"
+              left={(props) => <List.Icon {...props} icon="account-cog" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => setSection('accounts')}
+            />
+            <Divider />
+            <List.Item
+              title="알림 설정"
+              description="예약 알림 관리"
+              left={(props) => <List.Icon {...props} icon="bell-ring" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => setSection('notifications')}
+            />
+          </Card>
+        )}
 
         <Card style={styles.card}>
           <List.Item
