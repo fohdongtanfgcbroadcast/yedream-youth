@@ -11,7 +11,7 @@ const TabIcon = ({ label, color }: { label: string; color: string }) => (
 const HeaderTitle = ({ title }: { title: string }) => (
   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
     <Image source={require('../../assets/logo.png')} style={{ width: 32, height: 32, marginRight: 8 }} resizeMode="contain" />
-    <Text style={{ color: '#FFF', fontSize: 18, fontWeight: 'bold' }}>{title}</Text>
+    <Text style={{ color: '#FFF', fontSize: 18, fontWeight: 'bold', textShadowColor: '#000', textShadowOffset: { width: 0.5, height: 0.5 }, textShadowRadius: 1 }}>{title}</Text>
   </View>
 );
 
