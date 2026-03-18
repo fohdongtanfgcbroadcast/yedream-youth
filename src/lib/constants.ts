@@ -20,6 +20,9 @@ export const ATTENDANCE_TYPES = [
   { key: '주일예배' as const, label: '주일예배', icon: 'church', color: '#27AE60' },
 ];
 
+// 맨 뒤로 보낼 소속 이름
+export const TAIL_CLASSES = ['군인', '졸업생'];
+
 export const ROLES: Record<string, { label: string; color: string }> = {
   admin: { label: '관리자', color: '#E74C3C' },
   instructor: { label: '강사', color: '#3498DB' },

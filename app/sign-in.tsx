@@ -61,8 +61,8 @@ export default function SignIn() {
 
   const afterLogin = async () => {
     const state = useAuthStore.getState();
-    // 임원/관리자에게 푸시 알림 등록
-    if (state.profile && (state.profile.role === 'officer' || state.profile.role === 'admin')) {
+    // 임원/목사/전도사/관리자에게 푸시 알림 등록
+    if (state.profile && ['officer', 'pastor', 'evangelist', 'admin', 'instructor'].includes(state.profile.role)) {
       registerForPushNotifications(state.profile.id);
     }
   };

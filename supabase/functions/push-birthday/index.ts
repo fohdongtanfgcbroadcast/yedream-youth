@@ -26,11 +26,15 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: memberError.message }), { status: 500 });
     }
 
-    // 생일 필터링 (월/일 매칭)
+    // 생일 필터링 (MM-DD 형식 매칭)
+    const todayMMDD = `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const todayBirthdays = (birthdayMembers || []).filter((m: any) => {
       if (!m.date_of_birth) return false;
-      const dob = new Date(m.date_of_birth);
-      return dob.getMonth() + 1 === month && dob.getDate() === day;
+      // MM-DD 형식 또는 YYYY-MM-DD 형식 모두 지원
+      const dob = String(m.date_of_birth);
+      if (dob.length === 5) return dob === todayMMDD; // MM-DD
+      if (dob.length >= 10) return dob.slice(5, 10) === todayMMDD; // YYYY-MM-DD
+      return false;
     });
 
     if (todayBirthdays.length === 0) {
@@ -45,11 +49,11 @@ Deno.serve(async (req) => {
     const classMap: Record<string, string> = {};
     (classes || []).forEach((c: any) => { classMap[c.id] = c.name; });
 
-    // 3. 임원 + 관리자의 푸시 토큰 조회
+    // 3. 임원/목사/전도사/강사/관리자의 푸시 토큰 조회
     const { data: officerProfiles } = await supabase
       .from('profiles')
       .select('id')
-      .in('role', ['officer', 'admin']);
+      .in('role', ['officer', 'pastor', 'evangelist', 'instructor', 'admin']);
 
     if (!officerProfiles || officerProfiles.length === 0) {
       return new Response(JSON.stringify({ message: '알림 대상 없음', sent: 0 }));

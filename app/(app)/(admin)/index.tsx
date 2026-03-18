@@ -7,7 +7,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../src/stores/auth-store';
 import { useDataStore } from '../../../src/stores/data-store';
-import { COLORS, ROLES } from '../../../src/lib/constants';
+import { COLORS, ROLES, TAIL_CLASSES } from '../../../src/lib/constants';
 import { formatDate, calculateAge, asyncStorage, webAlert, webConfirm } from '../../../src/lib/utils';
 
 type AdminSection = 'menu' | 'members' | 'classes' | 'addMember' | 'addClass' | 'editClass' | 'editMember' | 'newFamily' | 'accounts' | 'notifications';
@@ -360,7 +360,7 @@ export default function AdminScreen() {
               >
                 미배정
               </Button>
-              {classes.filter((c) => c.is_active).map((c) => (
+              {[...classes.filter((c) => c.is_active && !TAIL_CLASSES.includes(c.name)), ...classes.filter((c) => c.is_active && TAIL_CLASSES.includes(c.name))].map((c) => (
                 <Button
                   key={c.id}
                   mode={formClassId === c.id ? 'contained' : 'outlined'}
@@ -501,7 +501,7 @@ export default function AdminScreen() {
 
             <Text style={styles.fieldLabel}>소속 제자반</Text>
             <View style={styles.classSelector}>
-              {classes.filter((c) => c.is_active).map((c) => (
+              {[...classes.filter((c) => c.is_active && !TAIL_CLASSES.includes(c.name)), ...classes.filter((c) => c.is_active && TAIL_CLASSES.includes(c.name))].map((c) => (
                 <Button key={c.id} mode={formClassId === c.id ? 'contained' : 'outlined'}
                   onPress={() => setFormClassId(formClassId === c.id ? '' : c.id)} compact style={styles.classButton}
                 >{c.name}</Button>
@@ -552,7 +552,7 @@ export default function AdminScreen() {
               <Button mode={formClassId === '' ? 'contained' : 'outlined'}
                 onPress={() => setFormClassId('')} compact style={styles.classButton}
               >미배정</Button>
-              {classes.filter((c) => c.is_active).map((c) => (
+              {[...classes.filter((c) => c.is_active && !TAIL_CLASSES.includes(c.name)), ...classes.filter((c) => c.is_active && TAIL_CLASSES.includes(c.name))].map((c) => (
                 <Button key={c.id} mode={formClassId === c.id ? 'contained' : 'outlined'}
                   onPress={() => setFormClassId(c.id)} compact style={styles.classButton}
                 >{c.name}</Button>
@@ -712,7 +712,7 @@ export default function AdminScreen() {
               <>
                 <Text style={styles.fieldLabel}>담당 제자반 (복수 선택 가능)</Text>
                 <View style={styles.classSelector}>
-                  {classes.filter((c) => c.is_active).map((c) => (
+                  {[...classes.filter((c) => c.is_active && !TAIL_CLASSES.includes(c.name)), ...classes.filter((c) => c.is_active && TAIL_CLASSES.includes(c.name))].map((c) => (
                     <Button key={c.id} mode={accountClassIds.includes(c.id) ? 'contained' : 'outlined'}
                       onPress={() => toggleAccountClass(c.id)} compact style={styles.classButton}
                     >{c.name}</Button>
