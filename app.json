@@ -29,7 +29,7 @@
       "bundler": "metro",
       "name": "예닮드림 청년부",
       "shortName": "예닮드림",
-      "description": "예닮드림 청년부 재적관리 시스템",
+      "description": "예닮드림 청년부 구성원 관리 시스템",
       "lang": "ko",
       "themeColor": "#4A90D9",
       "backgroundColor": "#F8F9FA"

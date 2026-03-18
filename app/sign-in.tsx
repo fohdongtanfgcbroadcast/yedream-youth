@@ -183,7 +183,7 @@ export default function SignIn() {
       <ScrollView contentContainerStyle={styles.inner}>
         <Image source={require('../assets/logo.png')} style={styles.logo} resizeMode="contain" />
         <Text style={styles.title}>예닮드림</Text>
-        <Text style={styles.subtitle}>청년부 재적관리</Text>
+        <Text style={styles.subtitle}>청년부 구성원 관리</Text>
 
         <Card style={styles.card}>
           <Card.Content>

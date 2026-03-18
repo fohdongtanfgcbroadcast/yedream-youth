@@ -20,11 +20,9 @@
   .phone-bar { background: #F5F5F5; padding: 8px 12px; display: flex; align-items: center; gap: 6px; font-size: 11px; color: #999; }
   .phone-url { background: #EBEBEB; border-radius: 8px; padding: 4px 10px; flex: 1; font-size: 11px; color: #333; text-align: center; }
   .phone-content { padding: 16px; text-align: center; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-  .share-btn { font-size: 28px; color: #007AFF; }
   .menu-item { background: #FFF; padding: 12px 16px; border-bottom: 1px solid #E5E5E5; display: flex; align-items: center; gap: 10px; font-size: 14px; text-align: left; }
   .menu-item.highlight { background: #E8F4FD; border: 2px solid #4A90D9; border-radius: 10px; }
   .menu-icon { font-size: 20px; }
-  .arrow { color: #007AFF; font-size: 24px; text-align: center; margin: 8px 0; }
   .highlight-box { background: #FFF3CD; border: 1px solid #F5A623; border-radius: 10px; padding: 12px 16px; margin: 12px 0; font-size: 13px; line-height: 1.6; }
   .warn { color: #E74C3C; font-weight: bold; }
   .ok { color: #27AE60; font-weight: bold; }
@@ -34,12 +32,36 @@
   .login-info h3 { font-size: 15px; color: #4A90D9; margin-bottom: 8px; }
   .login-info p { font-size: 13px; line-height: 1.8; color: #555; }
   .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #999; }
+  .link-box { background: #FFF; border: 2px solid #4A90D9; border-radius: 12px; padding: 16px; margin: 12px 0; position: relative; }
+  .link-box-title { font-size: 13px; font-weight: bold; color: #4A90D9; margin-bottom: 8px; }
+  .link-text { font-size: 12px; color: #333; word-break: break-all; background: #F5F5F5; padding: 10px; border-radius: 8px; user-select: all; -webkit-user-select: all; }
+  .copy-btn { display: block; margin-top: 10px; padding: 10px; background: #4A90D9; color: #FFF; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; text-align: center; cursor: pointer; width: 100%; }
+  .copy-btn:active { background: #2E6CB8; }
 </style>
 </head>
 <body>
 
 <h1>예닮드림 청년부</h1>
-<p class="subtitle">재적관리 앱 설치 안내서</p>
+<p class="subtitle">구성원 관리 앱 설치 안내서</p>
+
+<!-- ============ 링크 모음 ============ -->
+<div class="section">
+  <div class="section-title">설치 링크</div>
+
+  <div class="link-box">
+    <div class="link-box-title">Android (APK 다운로드)</div>
+    <div class="link-text" id="android-link">https://expo.dev/accounts/fohdongtanfgc/projects/yedream-youth/builds/4fe1eb1b-a6c0-46f0-87ed-b626d097b2ad</div>
+    <button class="copy-btn" onclick="copyLink('android-link')">Android 링크 복사</button>
+  </div>
+
+  <div class="link-box">
+    <div class="link-box-title">iPhone (Safari로 접속)</div>
+    <div class="link-text" id="iphone-link">https://fohdongtanfgcbroadcast.github.io/yedream-youth</div>
+    <button class="copy-btn" onclick="copyLink('iphone-link')">iPhone 링크 복사</button>
+  </div>
+</div>
+
+<hr class="divider">
 
 <!-- ============ Android ============ -->
 <div class="section">
@@ -49,20 +71,20 @@
     <div class="step-number">1</div>
     <div class="step-title">APK 다운로드 링크 접속</div>
     <div class="step-desc">
-      카카오톡이나 문자로 받은 <span class="blue">설치 링크</span>를 터치합니다.
-    </div>
-    <div class="phone-frame">
-      <div class="phone-screen">
-        <div class="phone-content" style="background: #4A90D9; color: #FFF;">
-          <div style="font-size: 40px; margin-bottom: 8px;">📲</div>
-          <div style="font-size: 14px; font-weight: bold;">링크를 터치하세요</div>
-        </div>
-      </div>
+      위의 <span class="blue">Android 링크</span>를 복사하여 카카오톡 등으로 전송하고, Android 폰에서 링크를 터치합니다.
     </div>
   </div>
 
   <div class="step">
     <div class="step-number">2</div>
+    <div class="step-title">"Install" 버튼 터치 → APK 다운로드</div>
+    <div class="step-desc">
+      Expo 페이지에서 <span class="blue">Install</span> 버튼을 터치하면 APK 파일이 다운로드됩니다.
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-number">3</div>
     <div class="step-title">APK 파일 설치</div>
     <div class="step-desc">
       다운로드된 파일을 열면 설치 화면이 나옵니다.<br>
@@ -82,11 +104,10 @@
   </div>
 
   <div class="step">
-    <div class="step-number">3</div>
+    <div class="step-number">✓</div>
     <div class="step-title">설치 완료!</div>
     <div class="step-desc">
-      홈 화면에 <span class="blue">예닮드림 청년부</span> 앱 아이콘이 생성됩니다.<br>
-      아이콘을 터치하여 앱을 실행하세요.
+      홈 화면에 <span class="blue">예닮드림 청년부</span> 앱 아이콘이 생성됩니다.
     </div>
   </div>
 </div>
@@ -95,7 +116,7 @@
 
 <!-- ============ iPhone ============ -->
 <div class="section">
-  <div class="section-title">iPhone 설치 방법 (Safari 필수!)</div>
+  <div class="section-title">iPhone 설치 방법</div>
 
   <div class="highlight-box">
     ⚠️ 반드시 <span class="warn">Safari</span> 브라우저를 사용해야 합니다!<br>
@@ -132,12 +153,12 @@
         </div>
         <div class="phone-content" style="background: #4A90D9;">
           <div style="color: #FFF; font-size: 24px; font-weight: bold;">예닮드림</div>
-          <div style="color: #E0E0E0; font-size: 13px;">청년부 재적관리</div>
+          <div style="color: #E0E0E0; font-size: 13px;">청년부 구성원 관리</div>
         </div>
       </div>
     </div>
     <div class="highlight-box">
-      💡 팁: 카카오톡으로 받은 링크를 <span class="blue">길게 누르고</span> → <span class="blue">"Safari에서 열기"</span>를 선택해도 됩니다.
+      💡 팁: 위의 <span class="blue">iPhone 링크 복사</span> 버튼을 눌러 링크를 복사한 후, Safari 주소창에 붙여넣기 하세요.
     </div>
   </div>
 
@@ -184,7 +205,6 @@
     <div class="step-number">5</div>
     <div class="step-title">"추가" 터치</div>
     <div class="step-desc">
-      이름이 "예닮드림 청년부"로 표시됩니다.<br>
       오른쪽 상단의 <span class="blue">"추가"</span>를 터치합니다.
     </div>
     <div class="phone-frame">
@@ -211,16 +231,8 @@
     <div class="step-number">✓</div>
     <div class="step-title">설치 완료!</div>
     <div class="step-desc">
-      홈 화면에 <span class="blue">예닮드림 청년부</span> 앱 아이콘이 생성됩니다!<br><br>
-      앱처럼 전체화면으로 실행됩니다. 🎉
-    </div>
-    <div class="phone-frame">
-      <div class="phone-screen">
-        <div class="phone-content" style="background: #F0F0F0;">
-          <div style="width: 60px; height: 60px; background: #4A90D9; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #FFF; font-size: 18px; font-weight: bold; margin-bottom: 6px;">예닮</div>
-          <div style="font-size: 11px;">예닮드림 청년부</div>
-        </div>
-      </div>
+      홈 화면에 <span class="blue">예닮드림 청년부</span> 앱 아이콘이 생성됩니다! 🎉<br>
+      앱처럼 전체화면으로 실행됩니다.
     </div>
   </div>
 </div>
@@ -233,13 +245,36 @@
   <p>
     <strong>계정:</strong> 본인 전화번호 입력 (예: 01012345678)<br>
     <strong>비밀번호:</strong> 개별 안내된 비밀번호<br><br>
-    ※ 최초 로그인 시 비밀번호 변경이 요청됩니다.
+    ※ 최초 로그인 시 비밀번호 변경이 요청됩니다.<br>
+    ※ 비밀번호를 잊으신 경우 로그인 화면에서 "비밀번호를 잊으셨나요?"를 터치하세요.
   </p>
 </div>
 
 <div class="footer">
-  예닮드림 청년부 재적관리 시스템 v1.0.0
+  예닮드림 청년부 구성원 관리 시스템 v1.0.0
 </div>
+
+<script>
+function copyLink(id) {
+  const text = document.getElementById(id).innerText;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => alert('링크가 복사되었습니다!')).catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try { document.execCommand('copy'); alert('링크가 복사되었습니다!'); } catch { alert('링크를 길게 눌러 복사해주세요.'); }
+  document.body.removeChild(ta);
+}
+</script>
 
 </body>
 </html>
