@@ -3,6 +3,7 @@
     "name": "예닮드림 청년부",
     "slug": "yedream-youth",
     "version": "1.0.0",
+    "runtimeVersion": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
@@ -33,6 +34,9 @@
       "themeColor": "#4A90D9",
       "backgroundColor": "#F8F9FA"
     },
+    "updates": {
+      "url": "https://u.expo.dev/c6c60a41-f518-4fb8-8ca3-8d8834a747dd"
+    },
     "experiments": {
       "baseUrl": "/yedream-youth"
     },
@@ -43,7 +47,8 @@
         {
           "sounds": []
         }
-      ]
+      ],
+      "expo-updates"
     ],
     "extra": {
       "router": {},

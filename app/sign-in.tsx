@@ -4,7 +4,7 @@ import { Text, TextInput, Button, Card, Switch, Modal, Portal } from 'react-nati
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../src/stores/auth-store';
 import { COLORS } from '../src/lib/constants';
-import { storage, webAlert } from '../src/lib/utils';
+import { storage, asyncStorage, webAlert } from '../src/lib/utils';
 import { registerForPushNotifications } from '../src/lib/pushNotifications';
 
 export default function SignIn() {
@@ -34,26 +34,29 @@ export default function SignIn() {
   const [resetLoading, setResetLoading] = useState(false);
   const [foundPassword, setFoundPassword] = useState('');
 
-  // 저장된 정보 불러오기
+  // 저장된 정보 불러오기 (네이티브 호환 - async)
   useEffect(() => {
-    const savedEmail = storage.getItem('saved_email');
-    const savedPassword = storage.getItem('saved_password');
-    const savedAutoLogin = storage.getItem('auto_login') === 'true';
-    const savedSave = storage.getItem('save_credentials') === 'true';
+    const loadSaved = async () => {
+      const savedEmail = await asyncStorage.getItem('saved_email');
+      const savedPassword = await asyncStorage.getItem('saved_password');
+      const savedAutoLogin = (await asyncStorage.getItem('auto_login')) === 'true';
+      const savedSave = (await asyncStorage.getItem('save_credentials')) === 'true';
 
-    if (savedSave && savedEmail) {
-      setEmail(savedEmail);
-      if (savedPassword) setPassword(savedPassword);
-      setSaveCredentials(true);
-    }
-    if (savedAutoLogin) {
-      setAutoLogin(true);
-    }
+      if (savedSave && savedEmail) {
+        setEmail(savedEmail);
+        if (savedPassword) setPassword(savedPassword);
+        setSaveCredentials(true);
+      }
+      if (savedAutoLogin) {
+        setAutoLogin(true);
+      }
 
-    // 자동 로그인
-    if (savedAutoLogin && savedEmail && savedPassword) {
-      handleAutoLogin(savedEmail, savedPassword);
-    }
+      // 자동 로그인
+      if (savedAutoLogin && savedEmail && savedPassword) {
+        handleAutoLogin(savedEmail, savedPassword);
+      }
+    };
+    loadSaved();
   }, []);
 
   const afterLogin = async () => {
@@ -89,23 +92,23 @@ export default function SignIn() {
 
     // 자격 정보 저장
     if (saveCredentials) {
-      storage.setItem('saved_email', email.trim());
-      storage.setItem('saved_password', password);
-      storage.setItem('save_credentials', 'true');
+      await asyncStorage.setItem('saved_email', email.trim());
+      await asyncStorage.setItem('saved_password', password);
+      await asyncStorage.setItem('save_credentials', 'true');
     } else {
-      storage.removeItem('saved_email');
-      storage.removeItem('saved_password');
-      storage.removeItem('save_credentials');
+      await asyncStorage.removeItem('saved_email');
+      await asyncStorage.removeItem('saved_password');
+      await asyncStorage.removeItem('save_credentials');
     }
 
     if (autoLogin) {
-      storage.setItem('auto_login', 'true');
-      storage.setItem('autoLogin_email', email.trim());
-      storage.setItem('autoLogin_password', password);
+      await asyncStorage.setItem('auto_login', 'true');
+      await asyncStorage.setItem('autoLogin_email', email.trim());
+      await asyncStorage.setItem('autoLogin_password', password);
     } else {
-      storage.removeItem('auto_login');
-      storage.removeItem('autoLogin_email');
-      storage.removeItem('autoLogin_password');
+      await asyncStorage.removeItem('auto_login');
+      await asyncStorage.removeItem('autoLogin_email');
+      await asyncStorage.removeItem('autoLogin_password');
     }
 
     const success = await login(email.trim(), password);
@@ -215,12 +218,12 @@ export default function SignIn() {
                     setSaveCredentials(next);
                     if (!next) {
                       setAutoLogin(false);
-                      storage.removeItem('saved_email');
-                      storage.removeItem('saved_password');
-                      storage.removeItem('save_credentials');
-                      storage.removeItem('auto_login');
-                      storage.removeItem('autoLogin_email');
-                      storage.removeItem('autoLogin_password');
+                      asyncStorage.removeItem('saved_email');
+                      asyncStorage.removeItem('saved_password');
+                      asyncStorage.removeItem('save_credentials');
+                      asyncStorage.removeItem('auto_login');
+                      asyncStorage.removeItem('autoLogin_email');
+                      asyncStorage.removeItem('autoLogin_password');
                     }
                   }}
                   color={COLORS.primary}
@@ -234,9 +237,9 @@ export default function SignIn() {
                     setAutoLogin(next);
                     if (next) setSaveCredentials(true);
                     if (!next) {
-                      storage.removeItem('auto_login');
-                      storage.removeItem('autoLogin_email');
-                      storage.removeItem('autoLogin_password');
+                      asyncStorage.removeItem('auto_login');
+                      asyncStorage.removeItem('autoLogin_email');
+                      asyncStorage.removeItem('autoLogin_password');
                     }
                   }}
                   color={COLORS.primary}

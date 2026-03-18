@@ -8,7 +8,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../src/stores/auth-store';
 import { useDataStore } from '../../../src/stores/data-store';
 import { COLORS, ROLES } from '../../../src/lib/constants';
-import { formatDate, calculateAge, storage, webAlert, webConfirm } from '../../../src/lib/utils';
+import { formatDate, calculateAge, asyncStorage, webAlert, webConfirm } from '../../../src/lib/utils';
 
 type AdminSection = 'menu' | 'members' | 'classes' | 'addMember' | 'addClass' | 'editClass' | 'editMember' | 'newFamily' | 'accounts' | 'notifications';
 
@@ -185,9 +185,9 @@ export default function AdminScreen() {
     if (!webConfirm('로그아웃 하시겠습니까?')) return;
 
     // 자동 로그인 정보 삭제
-    storage.removeItem('auto_login');
-    storage.removeItem('autoLogin_email');
-    storage.removeItem('autoLogin_password');
+    await asyncStorage.removeItem('auto_login');
+    await asyncStorage.removeItem('autoLogin_email');
+    await asyncStorage.removeItem('autoLogin_password');
     await logout();
     router.replace('/sign-in');
   };

@@ -90,17 +90,66 @@ export function formatWeekRange(sundayDate: Date): string {
   return `${formatShortDate(friday)}(금) ~ ${formatShortDate(sunday)}(일)`;
 }
 
-// ============ 로컬 스토리지 ============
+// ============ 크로스플랫폼 스토리지 ============
 
+import { Platform } from 'react-native';
+
+let _asyncStorage: any = null;
+function getAsyncStorage() {
+  if (!_asyncStorage && Platform.OS !== 'web') {
+    try { _asyncStorage = require('@react-native-async-storage/async-storage').default; } catch {}
+  }
+  return _asyncStorage;
+}
+
+// 동기 스토리지 (웹 전용, 초기 로드용)
 export const storage = {
   getItem: (key: string): string | null => {
-    try { return localStorage.getItem(key); } catch { return null; }
+    if (Platform.OS === 'web') {
+      try { return localStorage.getItem(key); } catch { return null; }
+    }
+    return null; // 네이티브에서는 async 사용
   },
   setItem: (key: string, value: string): void => {
-    try { localStorage.setItem(key, value); } catch {}
+    if (Platform.OS === 'web') {
+      try { localStorage.setItem(key, value); } catch {}
+    }
+    // 네이티브에서도 저장
+    const as = getAsyncStorage();
+    if (as) as.setItem(key, value);
   },
   removeItem: (key: string): void => {
-    try { localStorage.removeItem(key); } catch {}
+    if (Platform.OS === 'web') {
+      try { localStorage.removeItem(key); } catch {}
+    }
+    const as = getAsyncStorage();
+    if (as) as.removeItem(key);
+  },
+};
+
+// 비동기 스토리지 (네이티브 호환)
+export const asyncStorage = {
+  getItem: async (key: string): Promise<string | null> => {
+    if (Platform.OS === 'web') {
+      try { return localStorage.getItem(key); } catch { return null; }
+    }
+    const as = getAsyncStorage();
+    if (as) return await as.getItem(key);
+    return null;
+  },
+  setItem: async (key: string, value: string): Promise<void> => {
+    if (Platform.OS === 'web') {
+      try { localStorage.setItem(key, value); } catch {}
+    }
+    const as = getAsyncStorage();
+    if (as) await as.setItem(key, value);
+  },
+  removeItem: async (key: string): Promise<void> => {
+    if (Platform.OS === 'web') {
+      try { localStorage.removeItem(key); } catch {}
+    }
+    const as = getAsyncStorage();
+    if (as) await as.removeItem(key);
   },
 };
 
