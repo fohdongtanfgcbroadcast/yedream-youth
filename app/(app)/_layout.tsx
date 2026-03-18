@@ -10,7 +10,7 @@ const TabIcon = ({ label, color }: { label: string; color: string }) => (
 
 const HeaderTitle = ({ title }: { title: string }) => (
   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-    <Image source={require('../../assets/logo.png')} style={{ width: 28, height: 28, borderRadius: 6, marginRight: 8 }} resizeMode="contain" />
+    <Image source={require('../../assets/logo.png')} style={{ width: 32, height: 32, marginRight: 8 }} resizeMode="contain" />
     <Text style={{ color: '#FFF', fontSize: 18, fontWeight: 'bold' }}>{title}</Text>
   </View>
 );

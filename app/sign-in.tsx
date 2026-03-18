@@ -351,7 +351,7 @@ export default function SignIn() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.primary },
   inner: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  logo: { width: 80, height: 80, alignSelf: 'center', marginBottom: 12, borderRadius: 12 },
+  logo: { width: 120, height: 120, alignSelf: 'center', marginBottom: 12 },
   title: { fontSize: 36, fontWeight: 'bold', color: '#FFF', textAlign: 'center' },
   subtitle: { fontSize: 18, color: '#E0E0E0', textAlign: 'center', marginBottom: 24 },
   card: { borderRadius: 16, elevation: 4 },
