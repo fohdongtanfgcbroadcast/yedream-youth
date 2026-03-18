@@ -86,7 +86,9 @@ export default function AdminScreen() {
     if (!m) return;
     setEditingMemberId(memberId);
     setFormName(m.name);
-    setFormDob(m.date_of_birth || '');
+    // DB에 2000-MM-DD로 저장되어 있으면 MM-DD만 추출
+    const dob = m.date_of_birth || '';
+    setFormDob(dob.startsWith('2000-') ? dob.slice(5) : dob);
     setFormPhone(m.phone || '');
     setFormAddress(m.address || '');
     setFormNotes(m.notes || '');
