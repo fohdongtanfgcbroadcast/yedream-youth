@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, Alert } from 'react-native';
+import { supabase } from '../../../src/lib/supabase';
 import {
   Text, Card, Button, TextInput, List, IconButton, Divider, Avatar, Chip,
 } from 'react-native-paper';
@@ -9,7 +10,7 @@ import { useDataStore } from '../../../src/stores/data-store';
 import { COLORS, ROLES } from '../../../src/lib/constants';
 import { formatDate, calculateAge, storage, webAlert, webConfirm } from '../../../src/lib/utils';
 
-type AdminSection = 'menu' | 'members' | 'classes' | 'addMember' | 'addClass' | 'editMember' | 'newFamily' | 'accounts' | 'notifications';
+type AdminSection = 'menu' | 'members' | 'classes' | 'addMember' | 'addClass' | 'editClass' | 'editMember' | 'newFamily' | 'accounts' | 'notifications';
 
 export default function AdminScreen() {
   const router = useRouter();
@@ -30,9 +31,23 @@ export default function AdminScreen() {
   const [formTitle, setFormTitle] = useState('');
   const [formClassId, setFormClassId] = useState('');
 
-  // 제자반 추가 폼
+  // 제자반 추가/수정 폼
   const [newClassName, setNewClassName] = useState('');
   const [newClassDesc, setNewClassDesc] = useState('');
+  const [editingClassId, setEditingClassId] = useState<string | null>(null);
+  const [editClassName, setEditClassName] = useState('');
+  const [editClassDesc, setEditClassDesc] = useState('');
+  const [editClassInstructorId, setEditClassInstructorId] = useState('');
+
+  // 강사 프로필 목록
+  const [instructorProfiles, setInstructorProfiles] = useState<{ id: string; display_name: string; assigned_class_ids?: string[] }[]>([]);
+  useEffect(() => {
+    const loadInstructors = async () => {
+      const { data } = await supabase.from('profiles').select('id, display_name, assigned_class_ids').eq('role', 'instructor');
+      if (data) setInstructorProfiles(data);
+    };
+    loadInstructors();
+  }, []);
 
   // 계정 관리 폼
   const createInstructorAccount = useAuthStore((s) => s.createInstructorAccount);
@@ -111,6 +126,50 @@ export default function AdminScreen() {
     addClass({ name: newClassName.trim(), description: newClassDesc || undefined });
     webAlert(`${newClassName} 제자반이 추가되었습니다.`);
     setNewClassName(''); setNewClassDesc('');
+    setSection('classes');
+  };
+
+  const openEditClass = (classId: string) => {
+    const c = classes.find((cls) => cls.id === classId);
+    if (!c) return;
+    setEditingClassId(classId);
+    setEditClassName(c.name);
+    setEditClassDesc(c.description || '');
+    // 담당 강사 찾기
+    const instructor = instructorProfiles.find((p) => p.assigned_class_ids?.includes(classId));
+    setEditClassInstructorId(instructor?.id || '');
+    setSection('editClass');
+  };
+
+  const handleUpdateClass = async () => {
+    if (!editingClassId || !editClassName.trim()) { webAlert('제자반 이름을 입력해주세요.'); return; }
+
+    const { members: _, classes: __, ...store } = useDataStore.getState();
+    await store.updateClass(editingClassId, {
+      name: editClassName.trim(),
+      description: editClassDesc || null,
+    } as any);
+
+    // 강사 배정 업데이트: 기존 강사에서 이 반 제거, 새 강사에 이 반 추가
+    for (const inst of instructorProfiles) {
+      const hasClass = inst.assigned_class_ids?.includes(editingClassId);
+      if (inst.id === editClassInstructorId && !hasClass) {
+        // 새 강사에 반 추가
+        const newIds = [...(inst.assigned_class_ids || []), editingClassId];
+        await supabase.from('profiles').update({ assigned_class_ids: newIds }).eq('id', inst.id);
+      } else if (inst.id !== editClassInstructorId && hasClass) {
+        // 이전 강사에서 반 제거
+        const newIds = (inst.assigned_class_ids || []).filter((cid: string) => cid !== editingClassId);
+        await supabase.from('profiles').update({ assigned_class_ids: newIds }).eq('id', inst.id);
+      }
+    }
+
+    // 강사 목록 새로고침
+    const { data } = await supabase.from('profiles').select('id, display_name, assigned_class_ids').eq('role', 'instructor');
+    if (data) setInstructorProfiles(data);
+
+    webAlert('제자반 정보가 수정되었습니다.');
+    setEditingClassId(null);
     setSection('classes');
   };
 
@@ -421,14 +480,18 @@ export default function AdminScreen() {
         </View>
         {activeClasses.map((c) => {
           const memberCount = members.filter((m) => m.class_id === c.id && m.is_active).length;
+          const instructor = instructorProfiles.find((p) => p.assigned_class_ids?.includes(c.id));
           return (
             <Card key={c.id} style={styles.memberCard}>
               <Card.Content style={styles.memberRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.memberName}>{c.name}</Text>
-                  <Text style={styles.memberDetail}>{memberCount}명 | {c.description || '설명 없음'}</Text>
+                  <Text style={styles.memberDetail}>
+                    {memberCount}명 | 강사: {instructor?.display_name || '미배정'} | {c.description || '설명 없음'}
+                  </Text>
                 </View>
-                <IconButton icon="delete" iconColor={COLORS.danger} onPress={() => handleDeleteClass(c.id, c.name)} />
+                <IconButton icon="pencil" iconColor={COLORS.primary} onPress={() => openEditClass(c.id)} size={20} />
+                <IconButton icon="delete" iconColor={COLORS.danger} onPress={() => handleDeleteClass(c.id, c.name)} size={20} />
               </Card.Content>
             </Card>
           );
@@ -453,6 +516,55 @@ export default function AdminScreen() {
             <TextInput label="설명" value={newClassDesc} onChangeText={setNewClassDesc} mode="outlined" style={styles.input} />
             <Button mode="contained" onPress={handleAddClass} style={styles.submitBtn} contentStyle={{ paddingVertical: 6 }}>
               제자반 추가
+            </Button>
+          </Card.Content>
+        </Card>
+      </ScrollView>
+    );
+  }
+
+  // ============ 제자반 정보 수정 ============
+  if (section === 'editClass') {
+    return (
+      <ScrollView style={styles.container}>
+        <View style={styles.sectionHeader}>
+          <Button icon="arrow-left" onPress={() => { setEditingClassId(null); setSection('classes'); }}>뒤로</Button>
+          <Text style={styles.sectionTitle}>제자반 수정</Text>
+          <View style={{ width: 80 }} />
+        </View>
+        <Card style={styles.card}>
+          <Card.Content>
+            <TextInput label="제자반 이름 *" value={editClassName} onChangeText={setEditClassName} mode="outlined" style={styles.input} />
+            <TextInput label="설명" value={editClassDesc} onChangeText={setEditClassDesc} mode="outlined" style={styles.input} />
+
+            <Text style={styles.fieldLabel}>담당 강사</Text>
+            <View style={styles.classSelector}>
+              <Button
+                mode={editClassInstructorId === '' ? 'contained' : 'outlined'}
+                onPress={() => setEditClassInstructorId('')}
+                compact style={styles.classButton}
+              >
+                미배정
+              </Button>
+              {instructorProfiles.map((inst) => (
+                <Button
+                  key={inst.id}
+                  mode={editClassInstructorId === inst.id ? 'contained' : 'outlined'}
+                  onPress={() => setEditClassInstructorId(inst.id)}
+                  compact style={styles.classButton}
+                >
+                  {inst.display_name}
+                </Button>
+              ))}
+            </View>
+            {editClassInstructorId && (
+              <Text style={{ fontSize: 12, color: COLORS.success, marginBottom: 8 }}>
+                선택: {instructorProfiles.find((p) => p.id === editClassInstructorId)?.display_name}
+              </Text>
+            )}
+
+            <Button mode="contained" onPress={handleUpdateClass} style={styles.submitBtn} contentStyle={{ paddingVertical: 6 }} icon="content-save">
+              저장
             </Button>
           </Card.Content>
         </Card>
