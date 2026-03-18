@@ -97,7 +97,8 @@ export default function AttendanceScreen() {
     return active;
   }, [classes, isAdmin, assignedClassIds]);
 
-  // ============ 출석 기록 미입력 주차 계산 (담당 반 + 기간 기준) ============
+  // ============ 출석 기록 미입력 주차 계산 ============
+  // 선택 기간 내, 오늘 이전 지난 주차 중 담당 반 출석 기록이 없는 주차 전체 출력
   const missingWeeks = useMemo(() => {
     const missing: { sunday: Date; fridayStr: string; sundayStr: string; label: string }[] = [];
 
@@ -108,18 +109,21 @@ export default function AttendanceScreen() {
         .map((m) => m.id)
     );
 
-    // 기간 내 모든 일요일 순회
     const pStart = new Date(periodStart);
     const pEnd = new Date(periodEnd);
-    const todayDate = new Date();
+    // 이번 주(현재 진행 중)는 제외 → 지난 주 일요일까지만
+    const lastSunday = getSundayOfWeek(new Date());
+    const cutoff = new Date(lastSunday);
+    cutoff.setDate(cutoff.getDate() - 1); // 지난 주 토요일 = 이번 주 일요일 전날
+
     // 기간 시작일의 일요일부터
     let sun = getSundayOfWeek(pStart);
-    // 시작일보다 이전이면 다음 주로
     if (sun < pStart) sun = shiftWeek(sun, 1);
 
-    while (sun <= pEnd && sun <= todayDate) {
+    while (sun <= pEnd && sun <= cutoff) {
       const dates = getWeekDates(sun);
 
+      // 담당 반 멤버 중 해당 주에 출석 기록이 있는지 확인
       const hasAny = attendanceRecords.some((a) => {
         return myMemberIds.has(a.member_id) &&
           (a.attendance_date === dates.friday || a.attendance_date === dates.sunday);
@@ -272,7 +276,7 @@ export default function AttendanceScreen() {
         {missingWeeks.length === 0 ? (
           <Card style={styles.card}>
             <Card.Content>
-              <Text style={styles.emptyText}>최근 8주 내 미입력 주차가 없습니다.</Text>
+              <Text style={styles.emptyText}>선택한 기간 내 미입력 주차가 없습니다.</Text>
             </Card.Content>
           </Card>
         ) : (
