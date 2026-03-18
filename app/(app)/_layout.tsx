@@ -24,7 +24,7 @@ export default function AppLayout() {
       screenOptions={{
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textSecondary,
-        tabBarStyle: { height: 70, paddingBottom: 16, paddingTop: 4 },
+        tabBarStyle: { height: 80, paddingBottom: 24, paddingTop: 4 },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
         headerStyle: { backgroundColor: COLORS.primary },
         headerTintColor: '#FFF',
