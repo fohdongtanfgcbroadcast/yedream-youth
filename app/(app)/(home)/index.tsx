@@ -11,6 +11,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const profile = useAuthStore((s) => s.profile);
   const isAdmin = useAuthStore((s) => s.isAdmin)();
+  const assignedClassIds = useAuthStore((s) => s.getAssignedClassIds)();
   const loadAll = useDataStore((s) => s.loadAll);
   const isLoading = useDataStore((s) => s.isLoading);
 
@@ -25,22 +26,43 @@ export default function HomeScreen() {
   const addSchedule = useDataStore((s) => s.addSchedule);
   const deleteSchedule = useDataStore((s) => s.deleteSchedule);
 
-  // 일요일별 출석 체크 여부 맵
-  const sundayAttendanceMap = useMemo(() => {
-    const map: Record<string, boolean> = {};
+  // 일요일별 반별 출석 여부 맵: { sundayStr: { classId: boolean } }
+  const sundayClassAttendanceMap = useMemo(() => {
+    const map: Record<string, Record<string, boolean>> = {};
+    const activeClasses = classes.filter((c) => c.is_active);
+
     attendanceRecords.forEach((r) => {
       const d = new Date(r.attendance_date);
       const sun = getSundayOfWeek(d);
       const sunStr = toDateString(sun);
-      map[sunStr] = true;
-      // 금요일 출석도 해당 주 일요일로 매핑
-      const weekDates = getWeekDates(sun);
-      if (r.attendance_date === weekDates.friday) {
-        map[sunStr] = true;
+      if (!map[sunStr]) map[sunStr] = {};
+
+      // 해당 출석 기록의 멤버가 속한 반 찾기
+      const member = members.find((m) => m.id === r.member_id);
+      if (member?.class_id) {
+        map[sunStr][member.class_id] = true;
       }
     });
     return map;
-  }, [attendanceRecords]);
+  }, [attendanceRecords, members, classes]);
+
+  // 내가 볼 반 목록 (강사: 담당반만, 관리자: 전체)
+  const myClassIds = useMemo(() => {
+    if (isAdmin) return classes.filter((c) => c.is_active).map((c) => c.id);
+    if (assignedClassIds.length > 0) return assignedClassIds;
+    return classes.filter((c) => c.is_active).map((c) => c.id);
+  }, [isAdmin, assignedClassIds, classes]);
+
+  // 일요일별 나의 출석 완료 여부 (담당 반 모두 입력되어야 true)
+  const sundayAttendanceMap = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    // 모든 일요일에 대해 내 담당 반 모두 출석 기록 있는지 확인
+    Object.keys(sundayClassAttendanceMap).forEach((sunStr) => {
+      const classMap = sundayClassAttendanceMap[sunStr];
+      map[sunStr] = myClassIds.length > 0 && myClassIds.every((cid) => classMap[cid]);
+    });
+    return map;
+  }, [sundayClassAttendanceMap, myClassIds]);
 
   const today = new Date();
   const dayNames = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
@@ -179,7 +201,15 @@ export default function HomeScreen() {
               const hasSchedule = monthSchedules[dateStr] && monthSchedules[dateStr].length > 0;
               const dayOfWeek = (firstDay + day - 1) % 7;
               const isSunday = dayOfWeek === 0;
-              const sundayHasAttendance = isSunday ? sundayAttendanceMap[dateStr] : false;
+              // 일요일 출석 상태: 담당반 전부 입력=green, 일부만=orange, 없음=red
+              let sundayDotColor: string | null = null;
+              if (isSunday && myClassIds.length > 0) {
+                const classMap = sundayClassAttendanceMap[dateStr] || {};
+                const doneCount = myClassIds.filter((cid) => classMap[cid]).length;
+                if (doneCount === 0) sundayDotColor = COLORS.danger;
+                else if (doneCount < myClassIds.length) sundayDotColor = COLORS.warning;
+                else sundayDotColor = COLORS.success;
+              }
 
               return (
                 <TouchableOpacity
@@ -203,8 +233,8 @@ export default function HomeScreen() {
                   </Text>
                   <View style={{ flexDirection: 'row', gap: 2, marginTop: 1 }}>
                     {hasSchedule && <View style={styles.calDot} />}
-                    {isSunday && (
-                      <View style={[styles.calDot, { backgroundColor: sundayHasAttendance ? COLORS.success : COLORS.danger }]} />
+                    {sundayDotColor && (
+                      <View style={[styles.calDot, { backgroundColor: sundayDotColor }]} />
                     )}
                   </View>
                 </TouchableOpacity>
@@ -227,18 +257,38 @@ export default function HomeScreen() {
               </View>
 
               {/* 일요일이면 출석 체크 상태 표시 */}
-              {new Date(selectedDate).getDay() === 0 && (
-                <TouchableOpacity
-                  style={styles.sundayAttendanceRow}
-                  onPress={() => router.push('/(app)/(attendance)')}
-                >
-                  <View style={[styles.calDot, { width: 10, height: 10, borderRadius: 5, backgroundColor: sundayAttendanceMap[selectedDate] ? COLORS.success : COLORS.danger }]} />
-                  <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: sundayAttendanceMap[selectedDate] ? COLORS.success : COLORS.danger }}>
-                    {sundayAttendanceMap[selectedDate] ? '출석 기록 완료' : '출석 기록 미입력'}
-                  </Text>
-                  <Text style={{ color: COLORS.primary, fontWeight: '600' }}>출석 체크 ›</Text>
-                </TouchableOpacity>
-              )}
+              {new Date(selectedDate).getDay() === 0 && (() => {
+                const classMap = sundayClassAttendanceMap[selectedDate] || {};
+                const activeClasses = classes.filter((c) => c.is_active);
+                const relevantClasses = isAdmin
+                  ? activeClasses
+                  : activeClasses.filter((c) => assignedClassIds.includes(c.id));
+
+                return (
+                  <View style={{ marginBottom: 8 }}>
+                    {relevantClasses.map((cls) => {
+                      const hasRecord = classMap[cls.id] || false;
+                      return (
+                        <View key={cls.id} style={styles.sundayAttendanceRow}>
+                          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: hasRecord ? COLORS.success : COLORS.danger }} />
+                          <Text style={{ flex: 1, fontSize: 14, color: COLORS.text }}>
+                            {cls.name}
+                          </Text>
+                          <Text style={{ fontSize: 13, fontWeight: '600', color: hasRecord ? COLORS.success : COLORS.danger }}>
+                            {hasRecord ? '입력 완료' : '미입력'}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                    <TouchableOpacity
+                      style={{ alignItems: 'center', paddingVertical: 8, marginTop: 4, backgroundColor: COLORS.primary + '10', borderRadius: 8 }}
+                      onPress={() => router.push('/(app)/(attendance)')}
+                    >
+                      <Text style={{ color: COLORS.primary, fontWeight: '600', fontSize: 14 }}>출석 체크 화면으로 이동 ›</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })()}
 
               {selectedSchedules.length > 0 ? (
                 selectedSchedules.map((s) => (

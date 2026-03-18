@@ -85,20 +85,28 @@ export default function AttendanceScreen() {
     return active;
   }, [classes, isAdmin, assignedClassIds]);
 
-  // ============ 출석 기록 미입력 주차 계산 ============
+  // ============ 출석 기록 미입력 주차 계산 (담당 반 기준) ============
   const missingWeeks = useMemo(() => {
     const missing: { sunday: Date; fridayStr: string; sundayStr: string; label: string }[] = [];
     const now = new Date();
     const thisSunday = getSundayOfWeek(now);
+
+    // 내가 볼 반의 멤버 ID 목록
+    const myMemberIds = new Set(
+      members
+        .filter((m) => m.is_active && visibleClasses.some((c) => c.id === m.class_id))
+        .map((m) => m.id)
+    );
 
     // 최근 8주 확인
     for (let i = 1; i <= 8; i++) {
       const sun = shiftWeek(thisSunday, -i);
       const dates = getWeekDates(sun);
 
-      // 해당 주에 어떤 출석 기록이라도 있는지 확인
+      // 담당 반 멤버 중 해당 주에 출석 기록이 있는지 확인
       const hasAny = attendanceRecords.some((a) => {
-        return a.attendance_date === dates.friday || a.attendance_date === dates.sunday;
+        return myMemberIds.has(a.member_id) &&
+          (a.attendance_date === dates.friday || a.attendance_date === dates.sunday);
       });
 
       if (!hasAny) {
@@ -111,7 +119,7 @@ export default function AttendanceScreen() {
       }
     }
     return missing;
-  }, [attendanceRecords]);
+  }, [attendanceRecords, members, visibleClasses]);
 
   const toggleCheck = (
     memberId: string,
