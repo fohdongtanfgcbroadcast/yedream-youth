@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '../src/stores/auth-store';
 import { COLORS } from '../src/lib/constants';
 import { storage, webAlert } from '../src/lib/utils';
+import { registerForPushNotifications } from '../src/lib/pushNotifications';
 
 export default function SignIn() {
   const router = useRouter();
@@ -55,14 +56,22 @@ export default function SignIn() {
     }
   }, []);
 
+  const afterLogin = async () => {
+    const state = useAuthStore.getState();
+    // 임원/관리자에게 푸시 알림 등록
+    if (state.profile && (state.profile.role === 'officer' || state.profile.role === 'admin')) {
+      registerForPushNotifications(state.profile.id);
+    }
+  };
+
   const handleAutoLogin = async (e: string, p: string) => {
     const success = await login(e, p);
     if (success) {
-      // mustChangePassword 체크는 login 후 상태에서
       const state = useAuthStore.getState();
       if (state.mustChangePassword) {
         setShowPasswordChange(true);
       } else {
+        await afterLogin();
         router.replace('/(app)/(home)');
       }
     }
@@ -105,6 +114,7 @@ export default function SignIn() {
       if (state.mustChangePassword) {
         setShowPasswordChange(true);
       } else {
+        await afterLogin();
         router.replace('/(app)/(home)');
       }
     }

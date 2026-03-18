@@ -2,13 +2,13 @@
   "expo": {
     "name": "예닮드림 청년부",
     "slug": "yedream-youth",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
     "scheme": "yedream",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#4A90D9"
     },
@@ -19,15 +19,13 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#4A90D9",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/logo.png"
       },
       "package": "com.yedream.youth",
-      "predictiveBackGestureEnabled": false
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/logo.png",
       "bundler": "metro",
       "name": "예닮드림 청년부",
       "shortName": "예닮드림",
@@ -40,7 +38,13 @@
       "baseUrl": "/yedream-youth"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "sounds": []
+        }
+      ]
     ]
   }
 }
