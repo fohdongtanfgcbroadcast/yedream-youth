@@ -25,6 +25,7 @@ interface AuthState {
   createOfficerAccount: (email: string, password: string, displayName: string, phone: string) => Promise<{ success: boolean; error?: string }>;
   changePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
   resetPasswordByPhone: (email: string, phone: string) => Promise<{ success: boolean; error?: string }>;
+  resetPasswordWithVerification: (email: string, phone: string, birthday: string) => Promise<{ success: boolean; newPassword?: string; error?: string }>;
   autoLogin: () => Promise<boolean>;
 }
 
@@ -143,6 +144,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     return { success: true };
+  },
+
+  // 이메일 + 전화번호 + 생일로 비밀번호 찾기
+  resetPasswordWithVerification: async (email: string, phone: string, birthday: string) => {
+    const { data, error } = await supabase.rpc('reset_password_with_verification', {
+      p_email: email,
+      p_phone: phone,
+      p_birthday: birthday,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    if (!data) {
+      return { success: false, error: '입력한 정보가 일치하지 않습니다.\n이메일, 전화번호, 생일을 확인해주세요.' };
+    }
+
+    return { success: true, newPassword: data as string };
   },
 
   // 강사 계정 생성 (관리자 전용) - 휴대폰 번호 포함

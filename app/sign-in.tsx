@@ -13,7 +13,7 @@ export default function SignIn() {
   const loginError = useAuthStore((s) => s.loginError);
   const mustChangePassword = useAuthStore((s) => s.mustChangePassword);
   const changePassword = useAuthStore((s) => s.changePassword);
-  const resetPasswordByPhone = useAuthStore((s) => s.resetPasswordByPhone);
+  const resetPasswordWithVerification = useAuthStore((s) => s.resetPasswordWithVerification);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,7 +29,9 @@ export default function SignIn() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetPhone, setResetPhone] = useState('');
+  const [resetBirthday, setResetBirthday] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
+  const [foundPassword, setFoundPassword] = useState('');
 
   // 저장된 정보 불러오기
   useEffect(() => {
@@ -137,22 +139,29 @@ export default function SignIn() {
   };
 
   const handleResetPassword = async () => {
-    if (!resetEmail.trim() || !resetPhone.trim()) {
-      webAlert('이메일과 휴대폰 번호를 모두 입력해주세요.');
+    if (!resetEmail.trim() || !resetPhone.trim() || !resetBirthday.trim()) {
+      webAlert('이메일, 전화번호, 생일을 모두 입력해주세요.');
       return;
     }
     setResetLoading(true);
-    const result = await resetPasswordByPhone(resetEmail.trim(), resetPhone.trim());
+    const result = await resetPasswordWithVerification(
+      resetEmail.trim(), resetPhone.trim(), resetBirthday.trim()
+    );
     setResetLoading(false);
 
-    if (result.success) {
-      webAlert('비밀번호 재설정 이메일이 발송되었습니다.\n이메일을 확인해주세요.');
-      setShowForgotPassword(false);
-      setResetEmail('');
-      setResetPhone('');
+    if (result.success && result.newPassword) {
+      setFoundPassword(result.newPassword);
     } else {
-      webAlert(result.error || '비밀번호 재설정에 실패했습니다.');
+      webAlert(result.error || '정보가 일치하지 않습니다.');
     }
+  };
+
+  const closeForgotPassword = () => {
+    setShowForgotPassword(false);
+    setResetEmail('');
+    setResetPhone('');
+    setResetBirthday('');
+    setFoundPassword('');
   };
 
   return (
@@ -278,35 +287,62 @@ export default function SignIn() {
 
       {/* 비밀번호 찾기 모달 */}
       <Portal>
-        <Modal visible={showForgotPassword} onDismiss={() => setShowForgotPassword(false)} contentContainerStyle={styles.modal}>
+        <Modal visible={showForgotPassword} onDismiss={closeForgotPassword} contentContainerStyle={styles.modal}>
           <Text style={styles.modalTitle}>비밀번호 찾기</Text>
-          <Text style={styles.modalDesc}>가입 시 등록한 이메일과 휴대폰 번호를 입력해주세요.</Text>
-          <TextInput
-            label="이메일"
-            value={resetEmail}
-            onChangeText={setResetEmail}
-            mode="outlined"
-            style={styles.input}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          <TextInput
-            label="휴대폰 번호"
-            value={resetPhone}
-            onChangeText={setResetPhone}
-            mode="outlined"
-            style={styles.input}
-            keyboardType="phone-pad"
-            placeholder="예: 010-1234-5678"
-          />
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Button mode="outlined" onPress={() => setShowForgotPassword(false)} style={{ flex: 1 }}>
-              취소
-            </Button>
-            <Button mode="contained" onPress={handleResetPassword} loading={resetLoading} style={{ flex: 1 }}>
-              재설정 요청
-            </Button>
-          </View>
+
+          {foundPassword ? (
+            <>
+              <Text style={styles.modalDesc}>비밀번호가 초기화되었습니다.</Text>
+              <View style={styles.passwordResultBox}>
+                <Text style={styles.passwordResultLabel}>새 비밀번호</Text>
+                <Text style={styles.passwordResultValue}>{foundPassword}</Text>
+              </View>
+              <Text style={{ fontSize: 12, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 16 }}>
+                로그인 후 비밀번호 변경이 요청됩니다.
+              </Text>
+              <Button mode="contained" onPress={closeForgotPassword}>
+                확인
+              </Button>
+            </>
+          ) : (
+            <>
+              <Text style={styles.modalDesc}>계정 정보를 입력해주세요.</Text>
+              <TextInput
+                label="이메일 (계정)"
+                value={resetEmail}
+                onChangeText={setResetEmail}
+                mode="outlined"
+                style={styles.input}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+              <TextInput
+                label="생일 (YYYY-MM-DD)"
+                value={resetBirthday}
+                onChangeText={setResetBirthday}
+                mode="outlined"
+                style={styles.input}
+                placeholder="예: 1998-03-17"
+              />
+              <TextInput
+                label="전화번호"
+                value={resetPhone}
+                onChangeText={setResetPhone}
+                mode="outlined"
+                style={styles.input}
+                keyboardType="phone-pad"
+                placeholder="예: 010-1234-5678"
+              />
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <Button mode="outlined" onPress={closeForgotPassword} style={{ flex: 1 }}>
+                  취소
+                </Button>
+                <Button mode="contained" onPress={handleResetPassword} loading={resetLoading} style={{ flex: 1 }}>
+                  비밀번호 찾기
+                </Button>
+              </View>
+            </>
+          )}
         </Modal>
       </Portal>
     </KeyboardAvoidingView>
@@ -334,4 +370,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: COLORS.text, marginBottom: 8 },
   modalDesc: { fontSize: 14, color: COLORS.textSecondary, marginBottom: 16 },
+  passwordResultBox: { backgroundColor: '#E8F4FD', borderRadius: 12, padding: 20, alignItems: 'center', marginBottom: 12 },
+  passwordResultLabel: { fontSize: 14, color: COLORS.textSecondary, marginBottom: 8 },
+  passwordResultValue: { fontSize: 36, fontWeight: 'bold', color: COLORS.primary, letterSpacing: 8 },
 });
