@@ -119,6 +119,7 @@ export const useDataStore = create<DataState>((set, get) => ({
       phone: member.phone || null,
       address: member.address || null,
       notes: member.notes || null,
+      title: member.title || null,
       family_group_id: member.family_group_id || null,
       class_id: member.class_id || null,
     }).select().single();

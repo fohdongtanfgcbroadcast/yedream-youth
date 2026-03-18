@@ -1,5 +1,5 @@
 // 사용자 역할
-export type UserRole = 'admin' | 'instructor' | 'member';
+export type UserRole = 'admin' | 'instructor' | 'officer' | 'member';
 
 // 출석 유형
 export type AttendanceType = '철야' | '제자교육' | '주일예배';
@@ -23,6 +23,7 @@ export interface Member {
   phone?: string;
   address?: string;
   notes?: string;
+  title?: string;
   family_group_id?: string;
   class_id?: string;
   profile_id?: string;

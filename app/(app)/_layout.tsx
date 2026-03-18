@@ -7,6 +7,7 @@ import { COLORS } from '../../src/lib/constants';
 export default function AppLayout() {
   const profile = useAuthStore((s) => s.profile);
   const isAdmin = useAuthStore((s) => s.isAdmin)();
+  const canCheckAttendance = useAuthStore((s) => s.canCheckAttendance)();
 
   return (
     <Tabs
@@ -42,6 +43,7 @@ export default function AppLayout() {
           title: '출석',
           headerTitle: '출석 관리',
           tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="checkbox-marked-outline" size={size} color={color} />,
+          href: canCheckAttendance ? undefined : null,
         }}
       />
       <Tabs.Screen

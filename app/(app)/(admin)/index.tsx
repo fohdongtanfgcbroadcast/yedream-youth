@@ -27,6 +27,7 @@ export default function AdminScreen() {
   const [formPhone, setFormPhone] = useState('');
   const [formAddress, setFormAddress] = useState('');
   const [formNotes, setFormNotes] = useState('');
+  const [formTitle, setFormTitle] = useState('');
   const [formClassId, setFormClassId] = useState('');
 
   // 제자반 추가 폼
@@ -35,6 +36,8 @@ export default function AdminScreen() {
 
   // 계정 관리 폼
   const createInstructorAccount = useAuthStore((s) => s.createInstructorAccount);
+  const createOfficerAccount = useAuthStore((s) => s.createOfficerAccount);
+  const [accountType, setAccountType] = useState<'instructor' | 'officer'>('instructor');
   const [accountEmail, setAccountEmail] = useState('');
   const [accountPassword, setAccountPassword] = useState('');
   const [accountName, setAccountName] = useState('');
@@ -49,7 +52,7 @@ export default function AdminScreen() {
 
   const resetForm = () => {
     setFormName(''); setFormDob(''); setFormPhone('');
-    setFormAddress(''); setFormNotes(''); setFormClassId('');
+    setFormAddress(''); setFormNotes(''); setFormTitle(''); setFormClassId('');
     setEditingMemberId(null);
   };
 
@@ -62,6 +65,7 @@ export default function AdminScreen() {
     setFormPhone(m.phone || '');
     setFormAddress(m.address || '');
     setFormNotes(m.notes || '');
+    setFormTitle(m.title || '');
     setFormClassId(m.class_id || '');
     setSection('editMember');
   };
@@ -74,6 +78,7 @@ export default function AdminScreen() {
       phone: formPhone || undefined,
       address: formAddress || undefined,
       notes: formNotes || undefined,
+      title: formTitle || undefined,
       class_id: formClassId || undefined,
     });
     webAlert(`${formName} 회원이 추가되었습니다.`);
@@ -89,6 +94,7 @@ export default function AdminScreen() {
       phone: formPhone || undefined,
       address: formAddress || undefined,
       notes: formNotes || undefined,
+      title: formTitle || undefined,
       class_id: formClassId || undefined,
     });
     webAlert('회원 정보가 수정되었습니다.');
@@ -139,23 +145,25 @@ export default function AdminScreen() {
       webAlert('휴대폰 번호를 입력해주세요.');
       return;
     }
-    if (accountClassIds.length === 0) {
-      webAlert('담당 제자반을 1개 이상 선택해주세요.');
-      return;
+
+    if (accountType === 'instructor') {
+      if (accountClassIds.length === 0) {
+        webAlert('담당 제자반을 1개 이상 선택해주세요.');
+        return;
+      }
+      const classNames = accountClassIds.map((id) => classes.find((c) => c.id === id)?.name).join(', ');
+      const result = await createInstructorAccount(
+        accountEmail.trim(), accountPassword, accountName.trim(), accountPhone.trim(), accountClassIds,
+      );
+      if (!result.success) { webAlert(result.error || '계정 생성에 실패했습니다.'); return; }
+      webAlert(`${accountName} 강사 계정이 생성되었습니다.\n\n이메일: ${accountEmail}\n휴대폰: ${accountPhone}\n담당반: ${classNames}\n\n* 최초 로그인 시 비밀번호 변경이 요청됩니다.`);
+    } else {
+      const result = await createOfficerAccount(
+        accountEmail.trim(), accountPassword, accountName.trim(), accountPhone.trim(),
+      );
+      if (!result.success) { webAlert(result.error || '계정 생성에 실패했습니다.'); return; }
+      webAlert(`${accountName} 임원 계정이 생성되었습니다.\n\n이메일: ${accountEmail}\n휴대폰: ${accountPhone}\n\n* 최초 로그인 시 비밀번호 변경이 요청됩니다.`);
     }
-    const classNames = accountClassIds.map((id) => classes.find((c) => c.id === id)?.name).join(', ');
-    const result = await createInstructorAccount(
-      accountEmail.trim(),
-      accountPassword,
-      accountName.trim(),
-      accountPhone.trim(),
-      accountClassIds,
-    );
-    if (!result.success) {
-      webAlert(result.error || '계정 생성에 실패했습니다.');
-      return;
-    }
-    webAlert(`${accountName} 강사 계정이 생성되었습니다.\n\n이메일: ${accountEmail}\n휴대폰: ${accountPhone}\n담당반: ${classNames}\n\n* 최초 로그인 시 비밀번호 변경이 요청됩니다.`);
     setAccountEmail(''); setAccountPassword(''); setAccountName(''); setAccountPhone(''); setAccountClassIds([]);
   };
 
@@ -255,6 +263,7 @@ export default function AdminScreen() {
             <TextInput label="이름 *" value={formName} onChangeText={setFormName} mode="outlined" style={styles.input} />
             <TextInput label="생년월일 (YYYY-MM-DD)" value={formDob} onChangeText={setFormDob} mode="outlined" style={styles.input} placeholder="예: 1998-03-17" />
             <TextInput label="연락처" value={formPhone} onChangeText={setFormPhone} mode="outlined" style={styles.input} keyboardType="phone-pad" placeholder="예: 010-1234-5678" />
+            <TextInput label="직책" value={formTitle} onChangeText={setFormTitle} mode="outlined" style={styles.input} placeholder="예: 반장, 부반장, 강사" />
             <TextInput label="주소" value={formAddress} onChangeText={setFormAddress} mode="outlined" style={styles.input} />
             <TextInput label="메모" value={formNotes} onChangeText={setFormNotes} mode="outlined" style={styles.input} multiline numberOfLines={3} placeholder="특이사항, 방문 경위 등" />
 
@@ -337,6 +346,7 @@ export default function AdminScreen() {
             <TextInput label="이름 *" value={formName} onChangeText={setFormName} mode="outlined" style={styles.input} />
             <TextInput label="생년월일 (YYYY-MM-DD)" value={formDob} onChangeText={setFormDob} mode="outlined" style={styles.input} />
             <TextInput label="연락처" value={formPhone} onChangeText={setFormPhone} mode="outlined" style={styles.input} keyboardType="phone-pad" />
+            <TextInput label="직책" value={formTitle} onChangeText={setFormTitle} mode="outlined" style={styles.input} placeholder="예: 반장, 부반장, 강사" />
             <TextInput label="주소" value={formAddress} onChangeText={setFormAddress} mode="outlined" style={styles.input} />
             <TextInput label="메모" value={formNotes} onChangeText={setFormNotes} mode="outlined" style={styles.input} multiline />
 
@@ -372,6 +382,7 @@ export default function AdminScreen() {
             <TextInput label="이름 *" value={formName} onChangeText={setFormName} mode="outlined" style={styles.input} />
             <TextInput label="생년월일 (YYYY-MM-DD)" value={formDob} onChangeText={setFormDob} mode="outlined" style={styles.input} />
             <TextInput label="연락처" value={formPhone} onChangeText={setFormPhone} mode="outlined" style={styles.input} keyboardType="phone-pad" />
+            <TextInput label="직책" value={formTitle} onChangeText={setFormTitle} mode="outlined" style={styles.input} placeholder="예: 반장, 부반장, 강사" />
             <TextInput label="주소" value={formAddress} onChangeText={setFormAddress} mode="outlined" style={styles.input} />
             <TextInput label="메모" value={formNotes} onChangeText={setFormNotes} mode="outlined" style={styles.input} multiline numberOfLines={3} />
 
@@ -459,31 +470,51 @@ export default function AdminScreen() {
           <View style={{ width: 80 }} />
         </View>
         <Card style={styles.card}>
-          <Card.Title title="새 강사 계정" />
           <Card.Content>
+            <Text style={styles.fieldLabel}>계정 유형</Text>
+            <View style={styles.classSelector}>
+              <Button mode={accountType === 'instructor' ? 'contained' : 'outlined'}
+                onPress={() => setAccountType('instructor')} compact style={styles.classButton}
+              >강사</Button>
+              <Button mode={accountType === 'officer' ? 'contained' : 'outlined'}
+                onPress={() => setAccountType('officer')} compact style={styles.classButton}
+                buttonColor={accountType === 'officer' ? '#8E44AD' : undefined}
+              >임원</Button>
+            </View>
+
             <TextInput label="이메일 *" value={accountEmail} onChangeText={setAccountEmail} mode="outlined" style={styles.input} keyboardType="email-address" autoCapitalize="none" />
             <TextInput label="비밀번호 *" value={accountPassword} onChangeText={setAccountPassword} mode="outlined" style={styles.input} />
             <TextInput label="이름 *" value={accountName} onChangeText={setAccountName} mode="outlined" style={styles.input} />
             <TextInput label="휴대폰 번호 *" value={accountPhone} onChangeText={setAccountPhone} mode="outlined" style={styles.input} keyboardType="phone-pad" placeholder="예: 010-1234-5678" />
 
-            <Text style={styles.fieldLabel}>담당 제자반 (복수 선택 가능)</Text>
-            <View style={styles.classSelector}>
-              {classes.filter((c) => c.is_active).map((c) => (
-                <Button key={c.id} mode={accountClassIds.includes(c.id) ? 'contained' : 'outlined'}
-                  onPress={() => toggleAccountClass(c.id)} compact style={styles.classButton}
-                >{c.name}</Button>
-              ))}
-            </View>
-            {accountClassIds.length > 0 && (
-              <Text style={{ fontSize: 12, color: COLORS.success, marginBottom: 8 }}>
-                선택됨: {accountClassIds.map((id) => classes.find((c) => c.id === id)?.name).join(', ')}
+            {accountType === 'instructor' && (
+              <>
+                <Text style={styles.fieldLabel}>담당 제자반 (복수 선택 가능)</Text>
+                <View style={styles.classSelector}>
+                  {classes.filter((c) => c.is_active).map((c) => (
+                    <Button key={c.id} mode={accountClassIds.includes(c.id) ? 'contained' : 'outlined'}
+                      onPress={() => toggleAccountClass(c.id)} compact style={styles.classButton}
+                    >{c.name}</Button>
+                  ))}
+                </View>
+                {accountClassIds.length > 0 && (
+                  <Text style={{ fontSize: 12, color: COLORS.success, marginBottom: 8 }}>
+                    선택됨: {accountClassIds.map((id) => classes.find((c) => c.id === id)?.name).join(', ')}
+                  </Text>
+                )}
+              </>
+            )}
+
+            {accountType === 'officer' && (
+              <Text style={{ fontSize: 12, color: '#8E44AD', marginBottom: 8 }}>
+                임원 계정은 출석 체크 권한이 없습니다.
               </Text>
             )}
 
             <Button mode="contained" onPress={handleCreateAccount} style={styles.submitBtn} contentStyle={{ paddingVertical: 6 }}
-              icon="account-plus"
+              icon="account-plus" buttonColor={accountType === 'officer' ? '#8E44AD' : undefined}
             >
-              강사 계정 생성
+              {accountType === 'instructor' ? '강사' : '임원'} 계정 생성
             </Button>
 
             <Text style={{ fontSize: 11, color: COLORS.textSecondary, marginTop: 12, textAlign: 'center' }}>

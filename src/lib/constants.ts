@@ -20,8 +20,9 @@ export const ATTENDANCE_TYPES = [
   { key: '주일예배' as const, label: '주일예배', icon: 'church', color: '#27AE60' },
 ];
 
-export const ROLES = {
+export const ROLES: Record<string, { label: string; color: string }> = {
   admin: { label: '관리자', color: '#E74C3C' },
   instructor: { label: '강사', color: '#3498DB' },
+  officer: { label: '임원', color: '#8E44AD' },
   member: { label: '회원', color: '#95A5A6' },
 };

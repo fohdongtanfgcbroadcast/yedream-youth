@@ -77,6 +77,9 @@ export default function HomeScreen() {
   const [scheduleTitle, setScheduleTitle] = useState('');
   const [scheduleDesc, setScheduleDesc] = useState('');
 
+  // 생일 축하 메시지
+  const [birthdayTarget, setBirthdayTarget] = useState<typeof members[0] | null>(null);
+
   const daysInMonth = getDaysInMonth(calYear, calMonth);
   const firstDay = getFirstDayOfMonth(calYear, calMonth);
 
@@ -136,6 +139,45 @@ export default function HomeScreen() {
   }, [firstDay, daysInMonth]);
 
   const todayStr = toDateString(today);
+
+  // 생일 축하 메시지 생성
+  const getBirthdayMessage = (member: typeof members[0]) => {
+    const dob = member.date_of_birth ? new Date(member.date_of_birth) : today;
+    const dateStr = `${dob.getMonth() + 1}월 ${dob.getDate()}일`;
+    const cls = classes.find((c) => c.id === member.class_id);
+    const className = cls?.name || '';
+    const name = member.name;
+    const rawTitle = member.title || '';
+    const title = rawTitle === '강사' ? '강사님' : rawTitle;
+
+    return `할렐루야 오늘 ${dateStr} ${className} ${name} ${title}의 생일입니다~🎂
+생일 축하드려요🎉🎉🎉
+
+🎵당신은 사랑 받기 위해 태어난 사람
+당신의 삶 속에서 그 사랑 받고 있지요
+당신은 사랑 받기 위해 태어난 사람
+당신의 삶 속에서 그 사랑 받고 있지요 🎉
+
+🎵태초부터 시작된 하나님의 사랑은
+우리의 만남을 통해 열매를 맺고
+당신이 이 세상에 존재함으로 인해
+우리에게 얼마나 큰 기쁨이 되는지 🎉
+
+🎵당신은 사랑 받기 위해 태어난 사람
+지금도 그 사랑 받고 있지요
+당신은 사랑 받기위해 태어난 사람
+지금도 그 사랑 받고있지요
+지금도 그 사랑 받고있지요🎉`;
+  };
+
+  const copyBirthdayMessage = (member: typeof members[0]) => {
+    const msg = getBirthdayMessage(member);
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(msg).then(() => {
+        webAlert('생일 축하 메시지가 복사되었습니다.');
+      });
+    }
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -343,13 +385,16 @@ export default function HomeScreen() {
         <Card.Content>
           {birthdayMembers.length > 0 ? (
             birthdayMembers.map((m) => (
-              <View key={m.id} style={styles.birthdayRow}>
-                <Avatar.Text size={36} label={m.name.charAt(0)} style={{ backgroundColor: COLORS.secondary }} />
-                <View style={styles.birthdayInfo}>
-                  <Text style={styles.birthdayName}>{m.name}</Text>
-                  <Text style={styles.birthdayDate}>{formatDate(m.date_of_birth!)}</Text>
+              <TouchableOpacity key={m.id} onPress={() => setBirthdayTarget(m)}>
+                <View style={styles.birthdayRow}>
+                  <Avatar.Text size={36} label={m.name.charAt(0)} style={{ backgroundColor: COLORS.secondary }} />
+                  <View style={styles.birthdayInfo}>
+                    <Text style={styles.birthdayName}>{m.name}</Text>
+                    <Text style={styles.birthdayDate}>{formatDate(m.date_of_birth!)}</Text>
+                  </View>
+                  <Text style={{ color: COLORS.primary, fontSize: 13 }}>축하 메시지 ›</Text>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))
           ) : (
             <Text style={styles.emptyText}>오늘 생일인 청년이 없습니다</Text>
@@ -403,6 +448,24 @@ export default function HomeScreen() {
       </Card>
 
       <View style={{ height: 24 }} />
+
+      {/* 생일 축하 메시지 모달 */}
+      <Portal>
+        <Modal visible={!!birthdayTarget} onDismiss={() => setBirthdayTarget(null)} contentContainerStyle={styles.birthdayModal}>
+          {birthdayTarget && (
+            <ScrollView style={{ maxHeight: 500 }}>
+              <Text style={styles.birthdayModalTitle}>🎂 생일 축하 메시지</Text>
+              <View style={styles.birthdayMessageBox}>
+                <Text style={styles.birthdayMessageText}>{getBirthdayMessage(birthdayTarget)}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
+                <Button mode="outlined" onPress={() => setBirthdayTarget(null)} style={{ flex: 1 }}>닫기</Button>
+                <Button mode="contained" icon="content-copy" onPress={() => copyBirthdayMessage(birthdayTarget)} style={{ flex: 1 }}>메시지 복사</Button>
+              </View>
+            </ScrollView>
+          )}
+        </Modal>
+      </Portal>
 
       {/* 일정 추가 모달 */}
       <Portal>
@@ -481,4 +544,9 @@ const styles = StyleSheet.create({
   modal: { backgroundColor: '#FFF', margin: 24, padding: 24, borderRadius: 16 },
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: COLORS.text, marginBottom: 4 },
   modalDesc: { fontSize: 14, color: COLORS.textSecondary, marginBottom: 16 },
+  // 생일 축하 모달
+  birthdayModal: { backgroundColor: '#FFF', margin: 16, padding: 20, borderRadius: 16 },
+  birthdayModalTitle: { fontSize: 22, fontWeight: 'bold', color: COLORS.text, textAlign: 'center', marginBottom: 16 },
+  birthdayMessageBox: { backgroundColor: '#FFF9E6', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#F5A62340' },
+  birthdayMessageText: { fontSize: 15, lineHeight: 24, color: COLORS.text },
 });

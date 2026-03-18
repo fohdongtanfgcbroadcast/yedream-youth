@@ -17,9 +17,12 @@ interface AuthState {
   logout: () => void;
   isAdmin: () => boolean;
   isInstructor: () => boolean;
+  isOfficer: () => boolean;
+  canCheckAttendance: () => boolean;
   getAssignedClassIds: () => string[];
   loadProfile: () => Promise<void>;
   createInstructorAccount: (email: string, password: string, displayName: string, phone: string, assignedClassIds: string[]) => Promise<{ success: boolean; error?: string }>;
+  createOfficerAccount: (email: string, password: string, displayName: string, phone: string) => Promise<{ success: boolean; error?: string }>;
   changePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
   resetPasswordByPhone: (email: string, phone: string) => Promise<{ success: boolean; error?: string }>;
   autoLogin: () => Promise<boolean>;
@@ -73,6 +76,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   isAdmin: () => get().profile?.role === 'admin',
   isInstructor: () => get().profile?.role === 'instructor' || get().profile?.role === 'admin',
+  isOfficer: () => get().profile?.role === 'officer',
+  canCheckAttendance: () => {
+    const role = get().profile?.role;
+    return role === 'admin' || role === 'instructor';
+  },
   getAssignedClassIds: () => get().profile?.assigned_class_ids || [],
 
   loadProfile: async () => {
@@ -166,6 +174,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return { success: false, error: profileError.message };
     }
 
+    return { success: true };
+  },
+
+  // 임원 계정 생성 (관리자 전용)
+  createOfficerAccount: async (email, password, displayName, phone) => {
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) return { success: false, error: error.message };
+    if (!data.user) return { success: false, error: '계정 생성에 실패했습니다.' };
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: data.user.id,
+        role: 'officer',
+        display_name: displayName,
+        phone: phone || null,
+        must_change_password: true,
+      });
+
+    if (profileError) return { success: false, error: profileError.message };
     return { success: true };
   },
 }));
