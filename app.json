@@ -21,8 +21,7 @@
         "backgroundColor": "#4A90D9",
         "foregroundImage": "./assets/logo.png"
       },
-      "package": "com.yedream.youth",
-      "googleServicesFile": "./google-services.json"
+      "package": "com.yedream.youth"
     },
     "web": {
       "favicon": "./assets/logo.png",
@@ -45,6 +44,13 @@
           "sounds": []
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c6c60a41-f518-4fb8-8ca3-8d8834a747dd"
+      }
+    },
+    "owner": "fohdongtanfgc"
   }
 }
