@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
       to: t.expo_push_token,
       sound: 'default',
       title: '✅ 출석 체크 시간입니다',
-      body: '주일예배 출석 체크를 진행해주세요.',
+      body: '출석 체크를 진행해주세요.',
       data: { type: 'attendance', screen: 'attendance' },
     }));
 
