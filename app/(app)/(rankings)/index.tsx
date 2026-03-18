@@ -248,7 +248,7 @@ export default function RankingsScreen() {
                 <DataTable.Row key={item.member_id} style={item.point_rank <= 3 ? styles.highlightRow : undefined}>
                   <DataTable.Cell style={{ flex: 0.4 }}>
                     <Text style={[styles.rankText, item.point_rank <= 3 && styles.topRank3]}>
-                      {item.point_rank <= 3 ? ['🥇', '🥈', '🥉'][item.point_rank - 1] : getRankLabel(item.point_rank)}
+                      {getRankLabel(item.point_rank)}
                     </Text>
                   </DataTable.Cell>
                   <DataTable.Cell style={{ flex: 1.2 }}>
@@ -285,7 +285,7 @@ export default function RankingsScreen() {
                   <DataTable.Row key={item.class_id} style={item.final_rank <= 2 ? styles.highlightRow : undefined}>
                     <DataTable.Cell style={{ flex: 0.4 }}>
                       <Text style={[styles.rankText, item.final_rank <= 2 && styles.topRank2]}>
-                        {item.final_rank <= 2 ? ['🥇', '🥈'][item.final_rank - 1] : getRankLabel(item.final_rank)}
+                        {getRankLabel(item.final_rank)}
                       </Text>
                     </DataTable.Cell>
                     <DataTable.Cell style={{ flex: 1.2 }}>
@@ -409,7 +409,7 @@ export default function RankingsScreen() {
           <Card style={styles.card}>
             <Card.Title title="개인별 점수 상세" subtitle={`총 ${individualStats.length}명`} />
             <Card.Content>
-              {(showAllIndividual ? individualStats : individualStats.slice(0, 10)).map((item, idx) => (
+              {(showAllIndividual ? individualStats : individualStats.slice(0, 5)).map((item, idx) => (
                 <View key={item.id}>
                   <View style={styles.individualDetailRow}>
                     <View style={styles.individualDetailHeader}>
@@ -436,10 +436,10 @@ export default function RankingsScreen() {
                       </View>
                     </View>
                   </View>
-                  {idx < (showAllIndividual ? individualStats.length : Math.min(individualStats.length, 10)) - 1 && <Divider style={{ marginVertical: 8 }} />}
+                  {idx < (showAllIndividual ? individualStats.length : Math.min(individualStats.length, 5)) - 1 && <Divider style={{ marginVertical: 8 }} />}
                 </View>
               ))}
-              {individualStats.length > 10 && (
+              {individualStats.length > 5 && (
                 <TouchableOpacity
                   style={styles.expandButton}
                   onPress={() => setShowAllIndividual(!showAllIndividual)}

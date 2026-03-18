@@ -197,17 +197,9 @@ export default function ClassBrowseScreen() {
         return (
           <TouchableOpacity key={cls.id} onPress={() => setSelectedClassId(cls.id)}>
             <Card style={styles.classCard}>
-              <Card.Content style={styles.classRow}>
-                <Avatar.Text size={48} label="📚" style={{ backgroundColor: COLORS.primary }} />
-                <View style={styles.classInfo}>
-                  <Text style={styles.classCardTitle}>{cls.name}</Text>
-                  <View style={styles.classMetaRow}>
-                    <Text style={styles.classMetaItem}>{count}명</Text>
-                    <Text style={styles.classMetaDivider}>|</Text>
-                    <Text style={styles.classMetaInstructor}>강사: {instructorName}</Text>
-                  </View>
-                </View>
-                <Text style={{ fontSize: 20, color: COLORS.textSecondary }}>›</Text>
+              <Card.Content>
+                <Text style={styles.classCardTitle}>{cls.name}</Text>
+                <Text style={styles.classCardDesc}>{count}명 | 강사: {instructorName}</Text>
               </Card.Content>
             </Card>
           </TouchableOpacity>
@@ -221,12 +213,9 @@ export default function ClassBrowseScreen() {
         return (
           <TouchableOpacity onPress={() => setSelectedClassId('unassigned')}>
             <Card style={[styles.classCard, { borderLeftColor: COLORS.warning, borderLeftWidth: 3 }]}>
-              <Card.Content style={styles.classRow}>
-                <Avatar.Text size={48} label="?" style={{ backgroundColor: COLORS.warning }} />
-                <View style={styles.classInfo}>
-                  <Text style={styles.classCardTitle}>미배정</Text>
-                  <Text style={styles.classCardDesc}>{unassigned.length}명</Text>
-                </View>
+              <Card.Content>
+                <Text style={styles.classCardTitle}>미배정</Text>
+                <Text style={styles.classCardDesc}>{unassigned.length}명</Text>
               </Card.Content>
             </Card>
           </TouchableOpacity>

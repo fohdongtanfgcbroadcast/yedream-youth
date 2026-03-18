@@ -1,12 +1,7 @@
 import React from 'react';
-import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import { useAuthStore } from '../../src/stores/auth-store';
 import { COLORS } from '../../src/lib/constants';
-
-const TabIcon = ({ label, color }: { label: string; color: string }) => (
-  <Text style={{ fontSize: 22, color }}>{label}</Text>
-);
 
 export default function AppLayout() {
   const profile = useAuthStore((s) => s.profile);
@@ -18,8 +13,9 @@ export default function AppLayout() {
       screenOptions={{
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textSecondary,
-        tabBarStyle: { height: 60, paddingBottom: 8, paddingTop: 4 },
-        tabBarLabelStyle: { fontSize: 11 },
+        tabBarStyle: { height: 52, paddingBottom: 8, paddingTop: 8 },
+        tabBarLabelStyle: { fontSize: 13, fontWeight: '600' },
+        tabBarIconStyle: { display: 'none' },
         headerStyle: { backgroundColor: COLORS.primary },
         headerTintColor: '#FFF',
         headerTitleStyle: { fontWeight: 'bold' },
@@ -30,7 +26,6 @@ export default function AppLayout() {
         options={{
           title: '홈',
           headerTitle: '예닮드림 청년부',
-          tabBarIcon: ({ color }) => <TabIcon label="🏠" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -38,7 +33,6 @@ export default function AppLayout() {
         options={{
           title: '반별',
           headerTitle: '반별 조회',
-          tabBarIcon: ({ color }) => <TabIcon label="👥" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -46,7 +40,6 @@ export default function AppLayout() {
         options={{
           title: '출석',
           headerTitle: '출석 관리',
-          tabBarIcon: ({ color }) => <TabIcon label="✅" color={color} />,
           href: canCheckAttendance ? undefined : null,
         }}
       />
@@ -55,7 +48,6 @@ export default function AppLayout() {
         options={{
           title: '순위',
           headerTitle: '출석 순위',
-          tabBarIcon: ({ color }) => <TabIcon label="🏆" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -63,7 +55,6 @@ export default function AppLayout() {
         options={{
           title: '검색',
           headerTitle: '검색',
-          tabBarIcon: ({ color }) => <TabIcon label="🔍" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -71,7 +62,6 @@ export default function AppLayout() {
         options={{
           title: '더보기',
           headerTitle: isAdmin ? '관리 메뉴' : '설정',
-          tabBarIcon: ({ color }) => <TabIcon label="⚙️" color={color} />,
         }}
       />
       <Tabs.Screen name="(members)" options={{ href: null }} />

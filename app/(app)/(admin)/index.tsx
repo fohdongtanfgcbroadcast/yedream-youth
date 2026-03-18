@@ -255,41 +255,31 @@ export default function AdminScreen() {
             <List.Item
               title="새가족 등록"
               description="새로운 청년 등록"
-              left={() => <Text style={{ fontSize: 20, marginLeft: 8 }}>➕</Text>}
-              right={() => <Text style={{ fontSize: 18, marginRight: 8, color: COLORS.textSecondary }}>›</Text>}
-              onPress={() => { resetForm(); setSection('newFamily'); }}
+                                          onPress={() => { resetForm(); setSection('newFamily'); }}
             />
             <Divider />
             <List.Item
               title="회원 관리"
               description={`${members.filter((m) => m.is_active).length}명 | 정보 수정/삭제`}
-              left={() => <Text style={{ fontSize: 20, marginLeft: 8 }}>👥</Text>}
-              right={() => <Text style={{ fontSize: 18, marginRight: 8, color: COLORS.textSecondary }}>›</Text>}
-              onPress={() => setSection('members')}
+                                          onPress={() => setSection('members')}
             />
             <Divider />
             <List.Item
               title="제자반 관리"
               description={`${classes.filter((c) => c.is_active).length}개`}
-              left={() => <Text style={{ fontSize: 20, marginLeft: 8 }}>📚</Text>}
-              right={() => <Text style={{ fontSize: 18, marginRight: 8, color: COLORS.textSecondary }}>›</Text>}
-              onPress={() => setSection('classes')}
+                                          onPress={() => setSection('classes')}
             />
             <Divider />
             <List.Item
               title="계정 관리"
               description="사용자 계정 생성/역할 설정"
-              left={() => <Text style={{ fontSize: 20, marginLeft: 8 }}>🔑</Text>}
-              right={() => <Text style={{ fontSize: 18, marginRight: 8, color: COLORS.textSecondary }}>›</Text>}
-              onPress={() => setSection('accounts')}
+                                          onPress={() => setSection('accounts')}
             />
             <Divider />
             <List.Item
               title="알림 설정"
               description="예약 알림 관리"
-              left={() => <Text style={{ fontSize: 20, marginLeft: 8 }}>🔔</Text>}
-              right={() => <Text style={{ fontSize: 18, marginRight: 8, color: COLORS.textSecondary }}>›</Text>}
-              onPress={() => setSection('notifications')}
+                                          onPress={() => setSection('notifications')}
             />
           </Card>
         )}
@@ -297,8 +287,7 @@ export default function AdminScreen() {
         <Card style={styles.card}>
           <List.Item
             title="로그아웃"
-            left={() => <Text style={{ fontSize: 20, marginLeft: 8 }}>🚪</Text>}
-            titleStyle={{ color: COLORS.danger }}
+                        titleStyle={{ color: COLORS.danger }}
             onPress={handleLogout}
           />
         </Card>
@@ -652,12 +641,12 @@ export default function AdminScreen() {
           <Card.Title title="자동 알림 (기본 설정)" />
           <Card.Content>
             <View style={styles.notiRow}>
-              <Chip compact>🎂 생일 알림</Chip>
+              <Chip compact>생일 알림</Chip>
               <Text style={styles.notiDesc}>매일 오전 9시 | 담당 강사에게</Text>
             </View>
             <Divider style={{ marginVertical: 8 }} />
             <View style={styles.notiRow}>
-              <Chip compact>⛪ 출석 체크 알림</Chip>
+              <Chip compact>출석 체크 알림</Chip>
               <Text style={styles.notiDesc}>매주 일요일 19시 | 전체 강사에게</Text>
             </View>
           </Card.Content>
