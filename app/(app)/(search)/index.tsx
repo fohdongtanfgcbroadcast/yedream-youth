@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { Text, Card, Searchbar, Avatar, Chip, Divider } from 'react-native-paper';
+import { View, ScrollView, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { Text, Card, Avatar, Chip, Divider } from 'react-native-paper';
 import { useDataStore } from '../../../src/stores/data-store';
 import { COLORS, ATTENDANCE_TYPES } from '../../../src/lib/constants';
 import { formatDate, calculateAge } from '../../../src/lib/utils';
@@ -140,12 +140,15 @@ export default function SearchScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <Searchbar
-        placeholder="이름 또는 제자반으로 검색"
-        value={query}
-        onChangeText={setQuery}
-        style={styles.searchBar}
-      />
+      <View style={styles.searchBarContainer}>
+        <TextInput
+          placeholder="이름 또는 제자반으로 검색"
+          value={query}
+          onChangeText={setQuery}
+          style={styles.searchInput}
+        />
+        <Text style={styles.searchIcon}>🔍</Text>
+      </View>
 
       {query.length > 0 && (
         <Text style={styles.resultCount}>검색 결과: {results.length}명</Text>
@@ -176,7 +179,7 @@ export default function SearchScreen() {
 
       {query.length === 0 && (
         <View style={styles.hintContainer}>
-          <Text style={styles.hintText}>이름 또는 연락처를 입력하여</Text>
+          <Text style={styles.hintText}>이름 또는 제자반을 입력하여</Text>
           <Text style={styles.hintText}>회원 정보를 검색하세요</Text>
         </View>
       )}
@@ -186,7 +189,9 @@ export default function SearchScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  searchBar: { margin: 16, borderRadius: 12, elevation: 2 },
+  searchBarContainer: { flexDirection: 'row', alignItems: 'center', margin: 16, backgroundColor: '#FFF', borderRadius: 12, elevation: 2, paddingHorizontal: 16, height: 48 },
+  searchInput: { flex: 1, fontSize: 15, color: COLORS.text, height: 48, outlineStyle: 'none' } as any,
+  searchIcon: { fontSize: 20, marginLeft: 8, borderLeftWidth: 1, borderLeftColor: COLORS.border, paddingLeft: 12 },
   resultCount: { marginHorizontal: 20, marginBottom: 8, fontSize: 13, color: COLORS.textSecondary },
   resultCard: { marginHorizontal: 16, marginBottom: 8, borderRadius: 10 },
   resultRow: { flexDirection: 'row', alignItems: 'center' },

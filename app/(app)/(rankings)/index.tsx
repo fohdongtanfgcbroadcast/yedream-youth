@@ -7,8 +7,15 @@ import { COLORS, ATTENDANCE_TYPES } from '../../../src/lib/constants';
 import { getSundayOfWeek, getWeekDates, toDateString, shiftWeek, webAlert } from '../../../src/lib/utils';
 import * as XLSX from 'xlsx';
 
-function getRankLabel(rank: number): string {
-  return `${rank}`;
+function getRankColor(rank: number): string {
+  switch (rank) {
+    case 1: return '#FFD700'; // 금
+    case 2: return '#C0C0C0'; // 은
+    case 3: return '#CD7F32'; // 동
+    case 4: return '#4A90D9';
+    case 5: return '#8E44AD';
+    default: return '#7F8C8D';
+  }
 }
 
 // 기간 내 전체 주차 수 계산 (오늘까지의 모든 일요일)
@@ -247,9 +254,9 @@ export default function RankingsScreen() {
               {individualRankings.slice(0, 10).map((item) => (
                 <DataTable.Row key={item.member_id} style={item.point_rank <= 3 ? styles.highlightRow : undefined}>
                   <DataTable.Cell style={{ flex: 0.4 }}>
-                    <Text style={[styles.rankText, item.point_rank <= 3 && styles.topRank3]}>
-                      {getRankLabel(item.point_rank)}
-                    </Text>
+                    <View style={[styles.rankBadge, { backgroundColor: getRankColor(item.point_rank) + '20', borderColor: getRankColor(item.point_rank) }]}>
+                      <Text style={[styles.rankText, { color: getRankColor(item.point_rank) }]}>{item.point_rank}</Text>
+                    </View>
                   </DataTable.Cell>
                   <DataTable.Cell style={{ flex: 1.2 }}>
                     <Text style={[styles.nameText, item.point_rank <= 3 && { fontWeight: 'bold' }]}>{item.name}</Text>
@@ -284,9 +291,9 @@ export default function RankingsScreen() {
                 {classRankings.map((item) => (
                   <DataTable.Row key={item.class_id} style={item.final_rank <= 2 ? styles.highlightRow : undefined}>
                     <DataTable.Cell style={{ flex: 0.4 }}>
-                      <Text style={[styles.rankText, item.final_rank <= 2 && styles.topRank2]}>
-                        {getRankLabel(item.final_rank)}
-                      </Text>
+                      <View style={[styles.rankBadge, { backgroundColor: getRankColor(item.final_rank) + '20', borderColor: getRankColor(item.final_rank) }]}>
+                        <Text style={[styles.rankText, { color: getRankColor(item.final_rank) }]}>{item.final_rank}</Text>
+                      </View>
                     </DataTable.Cell>
                     <DataTable.Cell style={{ flex: 1.2 }}>
                       <Text style={[styles.nameText, item.final_rank <= 2 && { fontWeight: 'bold' }]}>{item.class_name}</Text>
@@ -526,9 +533,8 @@ const styles = StyleSheet.create({
   periodBtnTextActive: { color: '#FFF' },
   periodInfo: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', marginTop: 4 },
   // 순위
-  rankText: { fontSize: 16, fontWeight: 'bold', color: COLORS.text },
-  topRank3: { color: COLORS.secondary, fontSize: 20 },
-  topRank2: { color: COLORS.secondary, fontSize: 20 },
+  rankBadge: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  rankText: { fontSize: 14, fontWeight: 'bold' },
   highlightRow: { backgroundColor: '#FEF3E215' },
   nameText: { fontSize: 14, fontWeight: '600', color: COLORS.text },
   classText: { fontSize: 13, color: COLORS.textSecondary },
