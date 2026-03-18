@@ -425,10 +425,13 @@ export default function AdminScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingHorizontal: 16, marginBottom: 8, maxHeight: 40 }}>
           <View style={{ flexDirection: 'row', gap: 6 }}>
             <Button mode={memberFilter === 'all' ? 'contained' : 'outlined'} compact onPress={() => setMemberFilter('all')} labelStyle={{ fontSize: 11 }} style={{ borderRadius: 4 }}>전체</Button>
-            {classes.filter((c) => c.is_active).map((c) => (
+            {classes.filter((c) => c.is_active && !['군인', '졸업생'].includes(c.name)).map((c) => (
               <Button key={c.id} mode={memberFilter === c.id ? 'contained' : 'outlined'} compact onPress={() => setMemberFilter(c.id)} labelStyle={{ fontSize: 11 }} style={{ borderRadius: 4 }}>{c.name}</Button>
             ))}
-            <Button mode={memberFilter === 'unassigned' ? 'contained' : 'outlined'} compact onPress={() => setMemberFilter('unassigned')} labelStyle={{ fontSize: 11 }} style={{ borderRadius: 4 }}>미배정</Button>
+            {classes.filter((c) => c.is_active && ['군인', '졸업생'].includes(c.name)).map((c) => (
+              <Button key={c.id} mode={memberFilter === c.id ? 'contained' : 'outlined'} compact onPress={() => setMemberFilter(c.id)} labelStyle={{ fontSize: 11 }} style={{ borderRadius: 4 }}>{c.name}</Button>
+            ))}
+            <Button mode={memberFilter === 'unassigned' ? 'contained' : 'outlined'} compact onPress={() => setMemberFilter('unassigned')} labelStyle={{ fontSize: 11 }} style={{ borderRadius: 4 }}>기타</Button>
           </View>
         </ScrollView>
 

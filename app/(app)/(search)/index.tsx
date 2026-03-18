@@ -185,10 +185,13 @@ export default function SearchScreen() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingHorizontal: 16, marginBottom: 6, maxHeight: 40 }}>
         <View style={{ flexDirection: 'row', gap: 6 }}>
           <Button mode={classFilter === 'all' ? 'contained' : 'outlined'} compact onPress={() => setClassFilter('all')} labelStyle={{ fontSize: 11 }} style={{ borderRadius: 4 }}>전체</Button>
-          {classes.filter((c) => c.is_active).map((c) => (
+          {classes.filter((c) => c.is_active && !['군인', '졸업생'].includes(c.name)).map((c) => (
             <Button key={c.id} mode={classFilter === c.id ? 'contained' : 'outlined'} compact onPress={() => setClassFilter(c.id)} labelStyle={{ fontSize: 11 }} style={{ borderRadius: 4 }}>{c.name}</Button>
           ))}
-          <Button mode={classFilter === 'unassigned' ? 'contained' : 'outlined'} compact onPress={() => setClassFilter('unassigned')} labelStyle={{ fontSize: 11 }} style={{ borderRadius: 4 }}>미배정</Button>
+          {classes.filter((c) => c.is_active && ['군인', '졸업생'].includes(c.name)).map((c) => (
+            <Button key={c.id} mode={classFilter === c.id ? 'contained' : 'outlined'} compact onPress={() => setClassFilter(c.id)} labelStyle={{ fontSize: 11 }} style={{ borderRadius: 4 }}>{c.name}</Button>
+          ))}
+          <Button mode={classFilter === 'unassigned' ? 'contained' : 'outlined'} compact onPress={() => setClassFilter('unassigned')} labelStyle={{ fontSize: 11 }} style={{ borderRadius: 4 }}>기타</Button>
         </View>
       </ScrollView>
 
