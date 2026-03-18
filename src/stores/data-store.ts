@@ -10,6 +10,7 @@ import {
   ClassRanking,
   Schedule,
 } from '../types';
+import { isBirthdayToday } from '../lib/utils';
 
 interface DataState {
   members: Member[];
@@ -120,6 +121,7 @@ export const useDataStore = create<DataState>((set, get) => ({
       address: member.address || null,
       notes: member.notes || null,
       title: member.title || null,
+      is_lunar_birthday: member.is_lunar_birthday || false,
       family_group_id: member.family_group_id || null,
       class_id: member.class_id || null,
     }).select().single();
@@ -130,7 +132,7 @@ export const useDataStore = create<DataState>((set, get) => ({
   updateMember: async (id, updates) => {
     // undefined → null 변환, 조인 데이터 제거
     const cleanUpdates: Record<string, any> = {};
-    const validColumns = ['name', 'date_of_birth', 'phone', 'address', 'notes', 'title', 'family_group_id', 'class_id', 'profile_id', 'is_active'];
+    const validColumns = ['name', 'date_of_birth', 'phone', 'address', 'notes', 'title', 'is_lunar_birthday', 'family_group_id', 'class_id', 'profile_id', 'is_active'];
     Object.entries(updates).forEach(([key, value]) => {
       if (validColumns.includes(key)) {
         cleanUpdates[key] = value === undefined ? null : value;
@@ -352,11 +354,9 @@ export const useDataStore = create<DataState>((set, get) => ({
   },
 
   getBirthdayMembers: () => {
-    const today = new Date();
     return get().members.filter((m) => {
       if (!m.date_of_birth || !m.is_active) return false;
-      const dob = new Date(m.date_of_birth);
-      return dob.getMonth() === today.getMonth() && dob.getDate() === today.getDate();
+      return isBirthdayToday(m.date_of_birth, m.is_lunar_birthday || false);
     });
   },
 }));

@@ -142,15 +142,24 @@ export default function HomeScreen() {
 
   // 생일 축하 메시지 생성
   const getBirthdayMessage = (member: typeof members[0]) => {
-    const dob = member.date_of_birth ? new Date(member.date_of_birth) : today;
-    const dateStr = `${dob.getMonth() + 1}월 ${dob.getDate()}일`;
+    // 날짜 파싱 (MM-DD 또는 YYYY-MM-DD)
+    const parts = (member.date_of_birth || '').split('-');
+    let month: number, day: number;
+    if (parts.length === 3) { month = parseInt(parts[1]); day = parseInt(parts[2]); }
+    else if (parts.length === 2) { month = parseInt(parts[0]); day = parseInt(parts[1]); }
+    else { month = today.getMonth() + 1; day = today.getDate(); }
+
+    const lunarPrefix = member.is_lunar_birthday ? '음력 ' : '';
+    const dateStr = `${lunarPrefix}${month}월 ${day}일`;
+
     const cls = classes.find((c) => c.id === member.class_id);
-    const className = cls?.name || '';
+    const classStr = cls ? `${cls.name} ` : '';
     const name = member.name;
     const rawTitle = member.title || '';
-    const title = rawTitle === '강사' ? '강사님' : rawTitle;
+    const honorifics = ['강사', '목사', '전도사'];
+    const title = honorifics.includes(rawTitle) ? `${rawTitle}님` : rawTitle;
 
-    return `할렐루야 오늘 ${dateStr} ${className} ${name} ${title}의 생일입니다~🎂
+    return `할렐루야 오늘 ${dateStr} ${classStr}${name} ${title}의 생일입니다~🎂
 생일 축하드려요🎉🎉🎉
 
 🎵당신은 사랑 받기 위해 태어난 사람

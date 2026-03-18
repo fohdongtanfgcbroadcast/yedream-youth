@@ -115,6 +115,48 @@ export function webConfirm(message: string): boolean {
   return true;
 }
 
+// ============ 음력 변환 ============
+
+export function lunarToSolar(lunarMonth: number, lunarDay: number, year?: number): { month: number; day: number } {
+  try {
+    const KoreanLunarCalendar = require('korean-lunar-calendar');
+    const cal = new KoreanLunarCalendar();
+    const y = year || new Date().getFullYear();
+    cal.setLunarDate(y, lunarMonth, lunarDay, false);
+    const solar = cal.getSolarCalendar();
+    return { month: solar.month, day: solar.day };
+  } catch {
+    // 변환 실패 시 그대로 반환
+    return { month: lunarMonth, day: lunarDay };
+  }
+}
+
+// 생일 매칭: 음력이면 양력으로 변환 후 오늘과 비교
+export function isBirthdayToday(dateOfBirth: string, isLunar: boolean): boolean {
+  const today = new Date();
+  const todayMonth = today.getMonth() + 1;
+  const todayDay = today.getDate();
+
+  // MM-DD 또는 YYYY-MM-DD 형식 파싱
+  const parts = dateOfBirth.split('-');
+  let month: number, day: number;
+  if (parts.length === 3) {
+    month = parseInt(parts[1]);
+    day = parseInt(parts[2]);
+  } else if (parts.length === 2) {
+    month = parseInt(parts[0]);
+    day = parseInt(parts[1]);
+  } else {
+    return false;
+  }
+
+  if (isLunar) {
+    const solar = lunarToSolar(month, day);
+    return solar.month === todayMonth && solar.day === todayDay;
+  }
+  return month === todayMonth && day === todayDay;
+}
+
 // ============ 캘린더 유틸 ============
 
 // 특정 월의 일수

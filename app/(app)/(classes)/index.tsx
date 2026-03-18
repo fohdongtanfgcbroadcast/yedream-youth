@@ -83,7 +83,7 @@ export default function ClassBrowseScreen() {
               <Text style={styles.profileName}>{selectedMember.name}</Text>
               {selectedMember.date_of_birth && (
                 <Text style={styles.profileDetail}>
-                  {formatDate(selectedMember.date_of_birth)} ({calculateAge(selectedMember.date_of_birth)}세)
+                  {formatDate(selectedMember.date_of_birth)}
                 </Text>
               )}
               {selectedMember.phone && <Text style={styles.profileDetail}>{selectedMember.phone}</Text>}
@@ -165,7 +165,6 @@ export default function ClassBrowseScreen() {
                     <Text style={styles.memberName}>{member.name}</Text>
                     <Text style={styles.memberDetail}>
                       {member.phone || '연락처 없음'}
-                      {member.date_of_birth ? ` | ${calculateAge(member.date_of_birth)}세` : ''}
                     </Text>
                   </View>
                   <View style={styles.pointsBadge}>

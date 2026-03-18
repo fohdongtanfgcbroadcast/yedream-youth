@@ -59,7 +59,7 @@ export default function SearchScreen() {
               <Text style={styles.profileName}>{selectedMember.name}</Text>
               {selectedMember.date_of_birth && (
                 <Text style={styles.profileDetail}>
-                  {formatDate(selectedMember.date_of_birth)} ({calculateAge(selectedMember.date_of_birth)}세)
+                  {formatDate(selectedMember.date_of_birth)}
                 </Text>
               )}
               {selectedMember.phone && <Text style={styles.profileDetail}>{selectedMember.phone}</Text>}
