@@ -38,15 +38,16 @@ export default function ClassBrowseScreen() {
 
   const activeClasses = classes.filter((c) => c.is_active);
 
-  const selectedClass = useMemo(
-    () => activeClasses.find((c) => c.id === selectedClassId),
-    [selectedClassId, activeClasses]
-  );
+  const selectedClass = useMemo(() => {
+    if (selectedClassId === 'unassigned') return { id: 'unassigned', name: '미배정', description: '', is_active: true, created_at: '', updated_at: '' } as any;
+    return activeClasses.find((c) => c.id === selectedClassId);
+  }, [selectedClassId, activeClasses]);
 
-  const classMembers = useMemo(
-    () => selectedClassId ? members.filter((m) => m.class_id === selectedClassId && m.is_active) : [],
-    [selectedClassId, members]
-  );
+  const classMembers = useMemo(() => {
+    if (!selectedClassId) return [];
+    if (selectedClassId === 'unassigned') return members.filter((m) => !m.class_id && m.is_active);
+    return members.filter((m) => m.class_id === selectedClassId && m.is_active);
+  }, [selectedClassId, members]);
 
   const selectedMember = useMemo(
     () => selectedMemberId ? members.find((m) => m.id === selectedMemberId) : null,

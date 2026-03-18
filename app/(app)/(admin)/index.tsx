@@ -21,6 +21,8 @@ export default function AdminScreen() {
 
   const [section, setSection] = useState<AdminSection>('menu');
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [memberSearch, setMemberSearch] = useState('');
+  const [memberFilter, setMemberFilter] = useState('all'); // 'all' or class_id
 
   // 회원 추가/수정 폼
   const [formName, setFormName] = useState('');
@@ -325,7 +327,15 @@ export default function AdminScreen() {
               <Text style={{ fontSize: 14, color: COLORS.text, marginLeft: 8 }}>음력 생일</Text>
             </View>
             <TextInput label="연락처" value={formPhone} onChangeText={setFormPhone} mode="outlined" style={styles.input} keyboardType="phone-pad" placeholder="예: 010-1234-5678" />
-            <TextInput label="직책" value={formTitle} onChangeText={setFormTitle} mode="outlined" style={styles.input} placeholder="예: 반장, 부반장, 강사" />
+            <Text style={styles.fieldLabel}>직책</Text>
+            <View style={styles.classSelector}>
+              {['목사', '전도사', '강사', '청년', '기타'].map((t) => (
+                <Button key={t} mode={formTitle === t ? 'contained' : 'outlined'} compact
+                  onPress={() => setFormTitle(formTitle === t ? '' : t)}
+                  style={styles.classButton} labelStyle={{ fontSize: 12 }}
+                >{t}</Button>
+              ))}
+            </View>
             <TextInput label="주소" value={formAddress} onChangeText={setFormAddress} mode="outlined" style={styles.input} />
             <TextInput label="메모" value={formNotes} onChangeText={setFormNotes} mode="outlined" style={styles.input} multiline numberOfLines={3} placeholder="특이사항, 방문 경위 등" />
 
@@ -362,14 +372,52 @@ export default function AdminScreen() {
 
   // ============ 회원 관리 (목록) ============
   if (section === 'members') {
-    const activeMembers = members.filter((m) => m.is_active);
+    const activeMembers = members.filter((m) => {
+      if (!m.is_active) return false;
+      if (memberFilter !== 'all') {
+        if (memberFilter === 'unassigned') { if (m.class_id) return false; }
+        else { if (m.class_id !== memberFilter) return false; }
+      }
+      if (memberSearch) {
+        const q = memberSearch.toLowerCase();
+        const cls = classes.find((c) => c.id === m.class_id);
+        if (!m.name.toLowerCase().includes(q) && !(cls?.name.toLowerCase().includes(q))) return false;
+      }
+      return true;
+    });
     return (
       <ScrollView style={styles.container}>
         <View style={styles.sectionHeader}>
-          <Button onPress={() => setSection('menu')}>뒤로</Button>
-          <Text style={styles.sectionTitle}>회원 관리 ({activeMembers.length}명)</Text>
+          <Button onPress={() => setSection('menu')}>← 뒤로</Button>
+          <Text style={styles.sectionTitle}>회원 관리</Text>
           <Button mode="contained" onPress={() => { resetForm(); setSection('addMember'); }} compact>추가</Button>
         </View>
+
+        {/* 검색 */}
+        <View style={{ marginHorizontal: 16, marginBottom: 8 }}>
+          <TextInput
+            placeholder="이름 또는 제자반 검색"
+            value={memberSearch}
+            onChangeText={setMemberSearch}
+            mode="outlined"
+            dense
+            style={{ backgroundColor: '#FFF' }}
+          />
+        </View>
+
+        {/* 소속별 필터 */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingHorizontal: 16, marginBottom: 8, maxHeight: 40 }}>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            <Button mode={memberFilter === 'all' ? 'contained' : 'outlined'} compact onPress={() => setMemberFilter('all')} labelStyle={{ fontSize: 11 }} style={{ borderRadius: 4 }}>전체</Button>
+            {classes.filter((c) => c.is_active).map((c) => (
+              <Button key={c.id} mode={memberFilter === c.id ? 'contained' : 'outlined'} compact onPress={() => setMemberFilter(c.id)} labelStyle={{ fontSize: 11 }} style={{ borderRadius: 4 }}>{c.name}</Button>
+            ))}
+            <Button mode={memberFilter === 'unassigned' ? 'contained' : 'outlined'} compact onPress={() => setMemberFilter('unassigned')} labelStyle={{ fontSize: 11 }} style={{ borderRadius: 4 }}>미배정</Button>
+          </View>
+        </ScrollView>
+
+        <Text style={{ marginHorizontal: 20, marginBottom: 8, fontSize: 13, color: COLORS.textSecondary }}>{activeMembers.length}명</Text>
+
         {activeMembers.map((m) => {
           const cls = classes.find((c) => c.id === m.class_id);
           return (
@@ -378,7 +426,7 @@ export default function AdminScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.memberName}>{m.name}</Text>
                   <Text style={styles.memberDetail}>
-                    {cls?.name || '미배정'} {m.phone ? `| ${m.phone}` : ''}
+                    {cls?.name || '미배정'} {m.phone ? `| ${m.phone}` : ''} {m.title ? `| ${m.title}` : ''}
                   </Text>
                 </View>
                 <Button mode="text" compact onPress={() => openEditMember(m.id)} labelStyle={{ fontSize: 12 }}>수정</Button>
@@ -410,7 +458,15 @@ export default function AdminScreen() {
               <Text style={{ fontSize: 14, color: COLORS.text, marginLeft: 8 }}>음력 생일</Text>
             </View>
             <TextInput label="연락처" value={formPhone} onChangeText={setFormPhone} mode="outlined" style={styles.input} keyboardType="phone-pad" />
-            <TextInput label="직책" value={formTitle} onChangeText={setFormTitle} mode="outlined" style={styles.input} placeholder="예: 반장, 부반장, 강사" />
+            <Text style={styles.fieldLabel}>직책</Text>
+            <View style={styles.classSelector}>
+              {['목사', '전도사', '강사', '청년', '기타'].map((t) => (
+                <Button key={t} mode={formTitle === t ? 'contained' : 'outlined'} compact
+                  onPress={() => setFormTitle(formTitle === t ? '' : t)}
+                  style={styles.classButton} labelStyle={{ fontSize: 12 }}
+                >{t}</Button>
+              ))}
+            </View>
             <TextInput label="주소" value={formAddress} onChangeText={setFormAddress} mode="outlined" style={styles.input} />
             <TextInput label="메모" value={formNotes} onChangeText={setFormNotes} mode="outlined" style={styles.input} multiline />
 
@@ -450,7 +506,15 @@ export default function AdminScreen() {
               <Text style={{ fontSize: 14, color: COLORS.text, marginLeft: 8 }}>음력 생일</Text>
             </View>
             <TextInput label="연락처" value={formPhone} onChangeText={setFormPhone} mode="outlined" style={styles.input} keyboardType="phone-pad" />
-            <TextInput label="직책" value={formTitle} onChangeText={setFormTitle} mode="outlined" style={styles.input} placeholder="예: 반장, 부반장, 강사" />
+            <Text style={styles.fieldLabel}>직책</Text>
+            <View style={styles.classSelector}>
+              {['목사', '전도사', '강사', '청년', '기타'].map((t) => (
+                <Button key={t} mode={formTitle === t ? 'contained' : 'outlined'} compact
+                  onPress={() => setFormTitle(formTitle === t ? '' : t)}
+                  style={styles.classButton} labelStyle={{ fontSize: 12 }}
+                >{t}</Button>
+              ))}
+            </View>
             <TextInput label="주소" value={formAddress} onChangeText={setFormAddress} mode="outlined" style={styles.input} />
             <TextInput label="메모" value={formNotes} onChangeText={setFormNotes} mode="outlined" style={styles.input} multiline numberOfLines={3} />
 
