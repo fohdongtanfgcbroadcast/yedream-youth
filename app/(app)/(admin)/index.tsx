@@ -23,6 +23,7 @@ export default function AdminScreen() {
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [memberSearch, setMemberSearch] = useState('');
   const [memberFilter, setMemberFilter] = useState('all'); // 'all' or class_id
+  const [titleFilter, setTitleFilter] = useState('all'); // 'all' or title
 
   // 회원 추가/수정 폼
   const [formName, setFormName] = useState('');
@@ -389,6 +390,10 @@ export default function AdminScreen() {
         if (memberFilter === 'unassigned') { if (m.class_id) return false; }
         else { if (m.class_id !== memberFilter) return false; }
       }
+      if (titleFilter !== 'all') {
+        if (titleFilter === 'none') { if (m.title) return false; }
+        else { if (m.title !== titleFilter) return false; }
+      }
       if (memberSearch) {
         const q = memberSearch.toLowerCase();
         const cls = classes.find((c) => c.id === m.class_id);
@@ -424,6 +429,16 @@ export default function AdminScreen() {
               <Button key={c.id} mode={memberFilter === c.id ? 'contained' : 'outlined'} compact onPress={() => setMemberFilter(c.id)} labelStyle={{ fontSize: 11 }} style={{ borderRadius: 4 }}>{c.name}</Button>
             ))}
             <Button mode={memberFilter === 'unassigned' ? 'contained' : 'outlined'} compact onPress={() => setMemberFilter('unassigned')} labelStyle={{ fontSize: 11 }} style={{ borderRadius: 4 }}>미배정</Button>
+          </View>
+        </ScrollView>
+
+        {/* 직책별 필터 */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingHorizontal: 16, marginBottom: 8, maxHeight: 40 }}>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            <Button mode={titleFilter === 'all' ? 'contained' : 'outlined'} compact onPress={() => setTitleFilter('all')} labelStyle={{ fontSize: 11 }} style={{ borderRadius: 4 }}>전체</Button>
+            {['목사', '전도사', '강사', '청년', '기타'].map((t) => (
+              <Button key={t} mode={titleFilter === t ? 'contained' : 'outlined'} compact onPress={() => setTitleFilter(t)} labelStyle={{ fontSize: 11 }} style={{ borderRadius: 4 }}>{t}</Button>
+            ))}
           </View>
         </ScrollView>
 
