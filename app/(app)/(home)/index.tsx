@@ -236,7 +236,7 @@ export default function HomeScreen() {
         </Card>
         <Card style={[styles.summaryCard, { backgroundColor: '#FEF3E2' }]}>
           <Card.Content style={styles.summaryContent}>
-            <Text style={styles.summaryNumber}>{classes.filter((c) => c.is_active).length}</Text>
+            <Text style={styles.summaryNumber}>{classes.filter((c) => c.is_active && !['군인', '졸업생'].includes(c.name)).length}</Text>
             <Text style={styles.summaryLabel}>제자반</Text>
           </Card.Content>
         </Card>

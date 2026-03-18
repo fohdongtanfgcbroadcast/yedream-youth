@@ -282,7 +282,7 @@ export default function AdminScreen() {
             <Divider />
             <List.Item
               title="제자반 관리"
-              description={`${classes.filter((c) => c.is_active).length}개`}
+              description={`${classes.filter((c) => c.is_active && !['군인', '졸업생'].includes(c.name)).length}개`}
               right={() => <Button mode="outlined" compact onPress={() => setSection('classes')} labelStyle={{ fontSize: 12 }} style={{ borderRadius: 4 }}>수정</Button>}
               onPress={() => setSection('classes')}
             />
