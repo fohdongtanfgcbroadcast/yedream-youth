@@ -215,7 +215,7 @@ export default function SearchScreen() {
                 <View style={styles.resultInfo}>
                   <Text style={styles.resultName}>{member.name} {member.title ? `(${member.title})` : ''}</Text>
                   <Text style={styles.resultDetail}>
-                    {cls?.name || '미배정'}{instName ? ` | 담당: ${instName}` : ''}
+                    {cls?.name || '기타'}{instName ? ` | 담당: ${instName}` : ''}
                   </Text>
                 </View>
               </Card.Content>

@@ -452,7 +452,7 @@ export default function AdminScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.memberName}>{m.name}</Text>
                   <Text style={styles.memberDetail}>
-                    {cls?.name || '미배정'} {m.phone ? `| ${m.phone}` : ''} {m.title ? `| ${m.title}` : ''}
+                    {cls?.name || '기타'} {m.phone ? `| ${m.phone}` : ''} {m.title ? `| ${m.title}` : ''}
                   </Text>
                 </View>
                 <Button mode="text" compact onPress={() => openEditMember(m.id)} labelStyle={{ fontSize: 12 }}>수정</Button>

@@ -140,7 +140,7 @@ export default function RankingsScreen() {
         const records = filteredRecords.filter((a) => a.member_id === m.id);
         const cls = classes.find((c) => c.id === m.class_id);
         return {
-          id: m.id, name: m.name, class_name: cls?.name || '미배정',
+          id: m.id, name: m.name, class_name: cls?.name || '기타',
           cholya: records.filter((r) => r.attendance_type === '철야').length,
           jeja: records.filter((r) => r.attendance_type === '제자교육').length,
           juil: records.filter((r) => r.attendance_type === '주일예배').length,

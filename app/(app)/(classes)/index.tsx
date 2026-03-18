@@ -39,7 +39,7 @@ export default function ClassBrowseScreen() {
   const activeClasses = classes.filter((c) => c.is_active);
 
   const selectedClass = useMemo(() => {
-    if (selectedClassId === 'unassigned') return { id: 'unassigned', name: '미배정', description: '', is_active: true, created_at: '', updated_at: '' } as any;
+    if (selectedClassId === 'unassigned') return { id: 'unassigned', name: '기타', description: '', is_active: true, created_at: '', updated_at: '' } as any;
     return activeClasses.find((c) => c.id === selectedClassId);
   }, [selectedClassId, activeClasses]);
 
@@ -219,7 +219,7 @@ export default function ClassBrowseScreen() {
           <TouchableOpacity onPress={() => setSelectedClassId('unassigned')}>
             <Card style={[styles.classCard, { borderLeftColor: COLORS.warning, borderLeftWidth: 3 }]}>
               <Card.Content>
-                <Text style={styles.classCardTitle}>미배정</Text>
+                <Text style={styles.classCardTitle}>기타</Text>
                 <Text style={styles.classCardDesc}>{unassigned.length}명</Text>
               </Card.Content>
             </Card>
