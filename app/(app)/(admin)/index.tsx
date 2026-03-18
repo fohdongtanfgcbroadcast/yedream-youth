@@ -90,12 +90,12 @@ export default function AdminScreen() {
     if (!editingMemberId || !formName.trim()) { webAlert('이름을 입력해주세요.'); return; }
     updateMember(editingMemberId, {
       name: formName.trim(),
-      date_of_birth: formDob || undefined,
-      phone: formPhone || undefined,
-      address: formAddress || undefined,
-      notes: formNotes || undefined,
-      title: formTitle || undefined,
-      class_id: formClassId || undefined,
+      date_of_birth: formDob || null,
+      phone: formPhone || null,
+      address: formAddress || null,
+      notes: formNotes || null,
+      title: formTitle || null,
+      class_id: formClassId || null,
     });
     webAlert('회원 정보가 수정되었습니다.');
     resetForm();
