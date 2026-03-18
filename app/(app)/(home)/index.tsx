@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../src/stores/auth-store';
 import { useDataStore } from '../../../src/stores/data-store';
 import { COLORS, ATTENDANCE_TYPES } from '../../../src/lib/constants';
-import { formatDate, getDaysInMonth, getFirstDayOfMonth, toDateString } from '../../../src/lib/utils';
+import { formatDate, getDaysInMonth, getFirstDayOfMonth, toDateString, getSundayOfWeek, getWeekDates } from '../../../src/lib/utils';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -21,8 +21,26 @@ export default function HomeScreen() {
   const members = useDataStore((s) => s.members);
   const classes = useDataStore((s) => s.classes);
   const schedules = useDataStore((s) => s.schedules);
+  const attendanceRecords = useDataStore((s) => s.attendanceRecords);
   const addSchedule = useDataStore((s) => s.addSchedule);
   const deleteSchedule = useDataStore((s) => s.deleteSchedule);
+
+  // 일요일별 출석 체크 여부 맵
+  const sundayAttendanceMap = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    attendanceRecords.forEach((r) => {
+      const d = new Date(r.attendance_date);
+      const sun = getSundayOfWeek(d);
+      const sunStr = toDateString(sun);
+      map[sunStr] = true;
+      // 금요일 출석도 해당 주 일요일로 매핑
+      const weekDates = getWeekDates(sun);
+      if (r.attendance_date === weekDates.friday) {
+        map[sunStr] = true;
+      }
+    });
+    return map;
+  }, [attendanceRecords]);
 
   const today = new Date();
   const dayNames = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
@@ -160,6 +178,8 @@ export default function HomeScreen() {
               const isSelected = dateStr === selectedDate;
               const hasSchedule = monthSchedules[dateStr] && monthSchedules[dateStr].length > 0;
               const dayOfWeek = (firstDay + day - 1) % 7;
+              const isSunday = dayOfWeek === 0;
+              const sundayHasAttendance = isSunday ? sundayAttendanceMap[dateStr] : false;
 
               return (
                 <TouchableOpacity
@@ -181,7 +201,12 @@ export default function HomeScreen() {
                   ]}>
                     {day}
                   </Text>
-                  {hasSchedule && <View style={styles.calDot} />}
+                  <View style={{ flexDirection: 'row', gap: 2, marginTop: 1 }}>
+                    {hasSchedule && <View style={styles.calDot} />}
+                    {isSunday && (
+                      <View style={[styles.calDot, { backgroundColor: sundayHasAttendance ? COLORS.success : COLORS.danger }]} />
+                    )}
+                  </View>
                 </TouchableOpacity>
               );
             })}
@@ -200,6 +225,21 @@ export default function HomeScreen() {
                   </Button>
                 )}
               </View>
+
+              {/* 일요일이면 출석 체크 상태 표시 */}
+              {new Date(selectedDate).getDay() === 0 && (
+                <TouchableOpacity
+                  style={styles.sundayAttendanceRow}
+                  onPress={() => router.push('/(app)/(attendance)')}
+                >
+                  <View style={[styles.calDot, { width: 10, height: 10, borderRadius: 5, backgroundColor: sundayAttendanceMap[selectedDate] ? COLORS.success : COLORS.danger }]} />
+                  <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: sundayAttendanceMap[selectedDate] ? COLORS.success : COLORS.danger }}>
+                    {sundayAttendanceMap[selectedDate] ? '출석 기록 완료' : '출석 기록 미입력'}
+                  </Text>
+                  <Text style={{ color: COLORS.primary, fontWeight: '600' }}>출석 체크 ›</Text>
+                </TouchableOpacity>
+              )}
+
               {selectedSchedules.length > 0 ? (
                 selectedSchedules.map((s) => (
                   <View key={s.id} style={styles.scheduleItem}>
@@ -216,7 +256,9 @@ export default function HomeScreen() {
                   </View>
                 ))
               ) : (
-                <Text style={styles.emptyText}>등록된 일정이 없습니다</Text>
+                !((new Date(selectedDate)).getDay() === 0) && (
+                  <Text style={styles.emptyText}>등록된 일정이 없습니다</Text>
+                )
               )}
             </View>
           )}
@@ -388,6 +430,7 @@ const styles = StyleSheet.create({
   scheduleItemDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.primary },
   scheduleItemTitle: { fontSize: 15, fontWeight: '600', color: COLORS.text },
   scheduleItemDesc: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
+  sundayAttendanceRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 4, gap: 10, marginBottom: 8, backgroundColor: '#F8F9FA', borderRadius: 8 },
   modal: { backgroundColor: '#FFF', margin: 24, padding: 24, borderRadius: 16 },
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: COLORS.text, marginBottom: 4 },
   modalDesc: { fontSize: 14, color: COLORS.textSecondary, marginBottom: 16 },

@@ -1,10 +1,11 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { Text, Card, Button, Checkbox, Divider, Chip, IconButton } from 'react-native-paper';
 import { useAuthStore } from '../../../src/stores/auth-store';
 import { useDataStore } from '../../../src/stores/data-store';
 import { COLORS, ATTENDANCE_TYPES } from '../../../src/lib/constants';
-import { AttendanceType } from '../../../src/types';
+import { AttendanceType, Member } from '../../../src/types';
+import { supabase } from '../../../src/lib/supabase';
 import {
   getSundayOfWeek, getWeekDates, shiftWeek, formatWeekRange,
   formatShortDate, toDateString, getDayOfWeek,
@@ -15,7 +16,39 @@ export default function AttendanceScreen() {
   const isAdmin = useAuthStore((s) => s.isAdmin)();
   const isInstructor = useAuthStore((s) => s.isInstructor)();
   const assignedClassIds = useAuthStore((s) => s.getAssignedClassIds)();
-  const { members, classes, attendanceRecords, addAttendance, removeAttendance, getAttendanceByDateAndType } = useDataStore();
+  const { members, classes, attendanceRecords, addAttendance, removeAttendance, getAttendanceByDateAndType, addMember, loadMembers } = useDataStore();
+
+  // 강사 프로필 로드 + 멤버 레코드 보장
+  const [instructorMembers, setInstructorMembers] = useState<Record<string, string>>({}); // classId -> memberId[]
+  useEffect(() => {
+    const ensureInstructorMembers = async () => {
+      const { data: instructors } = await supabase
+        .from('profiles')
+        .select('id, display_name, phone, assigned_class_ids')
+        .eq('role', 'instructor');
+      if (!instructors) return;
+
+      let needsReload = false;
+      for (const inst of instructors) {
+        // 이미 멤버 레코드가 있는지 확인
+        const existing = members.find((m) => m.profile_id === inst.id);
+        if (!existing) {
+          // 멤버 레코드 생성
+          const firstClassId = inst.assigned_class_ids?.[0] || null;
+          const { data } = await supabase.from('members').insert({
+            name: inst.display_name + ' (강사)',
+            phone: inst.phone || null,
+            class_id: firstClassId,
+            profile_id: inst.id,
+            is_active: true,
+          }).select().single();
+          if (data) needsReload = true;
+        }
+      }
+      if (needsReload) await loadMembers();
+    };
+    ensureInstructorMembers();
+  }, []);
 
   // 주간 기준 일요일
   const [currentSunday, setCurrentSunday] = useState(() => getSundayOfWeek(new Date()));
