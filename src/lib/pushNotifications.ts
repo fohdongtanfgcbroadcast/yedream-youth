@@ -74,7 +74,7 @@ export async function registerForPushNotifications(profileId: string): Promise<s
 }
 
 // 알림 클릭 핸들러 설정
-export function setupNotificationHandler(onNotificationClick: () => void) {
+export function setupNotificationHandler(onNavigate: (screen: string) => void) {
   if (Platform.OS === 'web' || !Notifications) return;
 
   // 알림 수신 시 동작
@@ -86,9 +86,14 @@ export function setupNotificationHandler(onNotificationClick: () => void) {
     }),
   });
 
-  // 알림 클릭 시 동작
-  const subscription = Notifications.addNotificationResponseReceivedListener(() => {
-    onNotificationClick();
+  // 알림 클릭 시 동작 - data.screen에 따라 이동
+  const subscription = Notifications.addNotificationResponseReceivedListener((response: any) => {
+    const data = response?.notification?.request?.content?.data;
+    if (data?.screen === 'attendance') {
+      onNavigate('attendance');
+    } else {
+      onNavigate('home');
+    }
   });
 
   return () => subscription.remove();

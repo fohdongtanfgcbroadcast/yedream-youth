@@ -6,6 +6,7 @@ import { useAuthStore } from '../../../src/stores/auth-store';
 import { useDataStore } from '../../../src/stores/data-store';
 import { COLORS, ATTENDANCE_TYPES } from '../../../src/lib/constants';
 import { formatDate, getDaysInMonth, getFirstDayOfMonth, toDateString, getSundayOfWeek, getWeekDates, webAlert, webConfirm } from '../../../src/lib/utils';
+import { TAIL_CLASSES } from '../../../src/lib/constants';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -333,10 +334,13 @@ export default function HomeScreen() {
               {/* 일요일이면 출석 체크 상태 표시 */}
               {new Date(selectedDate).getDay() === 0 && (() => {
                 const classMap = sundayClassAttendanceMap[selectedDate] || {};
-                const activeClasses = classes.filter((c) => c.is_active);
+                const sortedClasses = [
+                  ...classes.filter((c) => c.is_active && !TAIL_CLASSES.includes(c.name)),
+                  ...classes.filter((c) => c.is_active && TAIL_CLASSES.includes(c.name)),
+                ];
                 const relevantClasses = isAdmin
-                  ? activeClasses
-                  : activeClasses.filter((c) => assignedClassIds.includes(c.id));
+                  ? sortedClasses
+                  : sortedClasses.filter((c) => assignedClassIds.includes(c.id));
 
                 return (
                   <View style={{ marginBottom: 8 }}>
