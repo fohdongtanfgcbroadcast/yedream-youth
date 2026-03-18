@@ -31,6 +31,7 @@ function countWeeksInPeriod(startDate: string, endDate: string): number {
 
 export default function RankingsScreen() {
   const [mode, setMode] = useState('individual');
+  const [showAllIndividual, setShowAllIndividual] = useState(false);
   const isAdmin = useAuthStore((s) => s.isAdmin)();
   const { members, attendanceRecords, classes } = useDataStore();
 
@@ -406,9 +407,9 @@ export default function RankingsScreen() {
 
           {/* 개인별 점수 상세 */}
           <Card style={styles.card}>
-            <Card.Title title="개인별 점수 상세" />
+            <Card.Title title="개인별 점수 상세" subtitle={`총 ${individualStats.length}명`} />
             <Card.Content>
-              {individualStats.map((item, idx) => (
+              {(showAllIndividual ? individualStats : individualStats.slice(0, 10)).map((item, idx) => (
                 <View key={item.id}>
                   <View style={styles.individualDetailRow}>
                     <View style={styles.individualDetailHeader}>
@@ -435,9 +436,19 @@ export default function RankingsScreen() {
                       </View>
                     </View>
                   </View>
-                  {idx < individualStats.length - 1 && <Divider style={{ marginVertical: 8 }} />}
+                  {idx < (showAllIndividual ? individualStats.length : Math.min(individualStats.length, 10)) - 1 && <Divider style={{ marginVertical: 8 }} />}
                 </View>
               ))}
+              {individualStats.length > 10 && (
+                <TouchableOpacity
+                  style={styles.expandButton}
+                  onPress={() => setShowAllIndividual(!showAllIndividual)}
+                >
+                  <Text style={styles.expandButtonText}>
+                    {showAllIndividual ? '접기 ▲' : `전체 보기 (${individualStats.length}명) ▼`}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </Card.Content>
           </Card>
 
@@ -547,4 +558,6 @@ const styles = StyleSheet.create({
   individualScoreBox: { flex: 1, borderRadius: 8, padding: 8, alignItems: 'center' },
   individualScoreValue: { fontSize: 18, fontWeight: '600' },
   individualScoreLabel: { fontSize: 10, color: COLORS.textSecondary, marginTop: 2 },
+  expandButton: { alignItems: 'center', paddingVertical: 12, marginTop: 8, backgroundColor: COLORS.background, borderRadius: 8 },
+  expandButtonText: { fontSize: 14, fontWeight: '600', color: COLORS.primary },
 });
