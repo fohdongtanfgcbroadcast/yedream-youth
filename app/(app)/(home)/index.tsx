@@ -289,7 +289,7 @@ export default function HomeScreen() {
                   {parseInt(selectedDate.split('-')[1])}월 {parseInt(selectedDate.split('-')[2])}일 일정
                 </Text>
                 {isAdmin && (
-                  <Button mode="contained" compact onPress={() => setShowAddSchedule(true)} icon="plus" labelStyle={{ fontSize: 12 }}>
+                  <Button mode="contained" compact onPress={() => setShowAddSchedule(true)} labelStyle={{ fontSize: 12 }}>
                     추가
                   </Button>
                 )}
@@ -385,7 +385,7 @@ export default function HomeScreen() {
           <View style={styles.quickActions}>
             <Button
               mode="contained"
-              icon="checkbox-marked-outline"
+             
               onPress={() => router.push('/(app)/(attendance)')}
               style={styles.quickButton}
               compact
@@ -394,7 +394,7 @@ export default function HomeScreen() {
             </Button>
             <Button
               mode="contained"
-              icon="account-group"
+             
               onPress={() => router.push('/(app)/(classes)')}
               style={[styles.quickButton, { backgroundColor: '#8E44AD' }]}
               compact
@@ -403,7 +403,7 @@ export default function HomeScreen() {
             </Button>
             <Button
               mode="contained"
-              icon="account-search"
+             
               onPress={() => router.push('/(app)/(search)')}
               style={[styles.quickButton, { backgroundColor: COLORS.success }]}
               compact
@@ -412,7 +412,7 @@ export default function HomeScreen() {
             </Button>
             <Button
               mode="contained"
-              icon="trophy"
+             
               onPress={() => router.push('/(app)/(rankings)')}
               style={[styles.quickButton, { backgroundColor: COLORS.secondary }]}
               compact
@@ -436,7 +436,7 @@ export default function HomeScreen() {
               </View>
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
                 <Button mode="outlined" onPress={() => setBirthdayTarget(null)} style={{ flex: 1 }}>닫기</Button>
-                <Button mode="contained" icon="content-copy" onPress={() => copyBirthdayMessage(birthdayTarget)} style={{ flex: 1 }}>메시지 복사</Button>
+                <Button mode="contained" onPress={() => copyBirthdayMessage(birthdayTarget)} style={{ flex: 1 }}>메시지 복사</Button>
               </View>
             </ScrollView>
           )}

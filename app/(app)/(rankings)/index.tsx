@@ -487,8 +487,8 @@ export default function RankingsScreen() {
               <Card.Title title="데이터 내보내기" subtitle="엑셀 파일로 저장" />
               <Card.Content>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <Button mode="contained" icon="file-excel" onPress={() => exportToExcel('individual')} style={{ flex: 1, borderRadius: 8 }} buttonColor="#27AE60">개인별 저장</Button>
-                  <Button mode="contained" icon="file-excel" onPress={() => exportToExcel('class')} style={{ flex: 1, borderRadius: 8 }} buttonColor="#2980B9">반별 저장</Button>
+                  <Button mode="contained" onPress={() => exportToExcel('individual')} style={{ flex: 1, borderRadius: 8 }} buttonColor="#27AE60">개인별 저장</Button>
+                  <Button mode="contained" onPress={() => exportToExcel('class')} style={{ flex: 1, borderRadius: 8 }} buttonColor="#2980B9">반별 저장</Button>
                 </View>
               </Card.Content>
             </Card>

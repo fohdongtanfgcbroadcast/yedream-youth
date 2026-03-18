@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, Alert, TouchableOpacity } from 'react-native';
-import { Text, Card, Button, Checkbox, Divider, Chip, IconButton } from 'react-native-paper';
+import { Text, Card, Button, Divider, Chip, IconButton } from 'react-native-paper';
+import { WebCheckbox } from '../../../src/lib/WebCheckbox';
 import { useAuthStore } from '../../../src/stores/auth-store';
 import { useDataStore } from '../../../src/stores/data-store';
 import { COLORS, ATTENDANCE_TYPES } from '../../../src/lib/constants';
@@ -220,7 +221,7 @@ export default function AttendanceScreen() {
     return (
       <ScrollView style={styles.container}>
         <View style={styles.header}>
-          <Button icon="arrow-left" onPress={() => setShowHistory(false)}>출석 입력</Button>
+          <Button onPress={() => setShowHistory(false)}>출석 입력</Button>
           <Text style={styles.headerTitle}>출석 이력</Text>
         </View>
         {recentRecords.map((record) => {
@@ -241,14 +242,14 @@ export default function AttendanceScreen() {
                   {record.attendance_type}
                 </Chip>
                 {(isAdmin || isInstructor) && (
-                  <IconButton
-                    icon="close-circle" size={18} iconColor={COLORS.danger}
+                  <Button mode="text" compact
                     onPress={() => {
                       if (webConfirm('이 출석 기록을 삭제하시겠습니까?')) {
                         removeAttendance(record.id);
                       }
                     }}
-                  />
+                    labelStyle={{ fontSize: 12, color: COLORS.danger }}
+                  >삭제</Button>
                 )}
               </Card.Content>
             </Card>
@@ -264,7 +265,7 @@ export default function AttendanceScreen() {
     return (
       <ScrollView style={styles.container}>
         <View style={styles.header}>
-          <Button icon="arrow-left" onPress={() => setShowMissing(false)}>출석 입력</Button>
+          <Button onPress={() => setShowMissing(false)}>출석 입력</Button>
           <Text style={styles.headerTitle}>출석 기록 미입력</Text>
         </View>
 
@@ -328,8 +329,8 @@ export default function AttendanceScreen() {
               const isChecked = checked.has(member.id);
               return (
                 <View key={member.id} style={styles.memberRow}>
-                  <Checkbox
-                    status={isExisting || isChecked ? 'checked' : 'unchecked'}
+                  <WebCheckbox
+                    checked={isExisting || isChecked}
                     onPress={() => toggleCheck(member.id, checked, setChecked, existing)}
                     color={isExisting ? COLORS.success : color}
                   />
@@ -409,12 +410,12 @@ export default function AttendanceScreen() {
       </Card>
 
       <View style={styles.actionRow}>
-        <Button mode="text" icon="history" onPress={() => setShowHistory(true)} compact>
+        <Button mode="text" onPress={() => setShowHistory(true)} compact>
           출석 이력
         </Button>
         <Button
           mode="text"
-          icon="alert-circle-outline"
+         
           onPress={() => setShowMissing(true)}
           compact
           textColor={missingWeeks.length > 0 ? COLORS.danger : COLORS.textSecondary}

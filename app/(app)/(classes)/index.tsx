@@ -198,7 +198,7 @@ export default function ClassBrowseScreen() {
           <TouchableOpacity key={cls.id} onPress={() => setSelectedClassId(cls.id)}>
             <Card style={styles.classCard}>
               <Card.Content style={styles.classRow}>
-                <Avatar.Icon size={48} icon="school" style={{ backgroundColor: COLORS.primary }} />
+                <Avatar.Text size={48} label="📚" style={{ backgroundColor: COLORS.primary }} />
                 <View style={styles.classInfo}>
                   <Text style={styles.classCardTitle}>{cls.name}</Text>
                   <View style={styles.classMetaRow}>
@@ -222,7 +222,7 @@ export default function ClassBrowseScreen() {
           <TouchableOpacity onPress={() => setSelectedClassId('unassigned')}>
             <Card style={[styles.classCard, { borderLeftColor: COLORS.warning, borderLeftWidth: 3 }]}>
               <Card.Content style={styles.classRow}>
-                <Avatar.Icon size={48} icon="account-question" style={{ backgroundColor: COLORS.warning }} />
+                <Avatar.Text size={48} label="?" style={{ backgroundColor: COLORS.warning }} />
                 <View style={styles.classInfo}>
                   <Text style={styles.classCardTitle}>미배정</Text>
                   <Text style={styles.classCardDesc}>{unassigned.length}명</Text>

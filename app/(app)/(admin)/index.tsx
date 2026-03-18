@@ -255,40 +255,40 @@ export default function AdminScreen() {
             <List.Item
               title="새가족 등록"
               description="새로운 청년 등록"
-              left={(props) => <List.Icon {...props} icon="account-plus" color={COLORS.success} />}
-              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              left={() => <Text style={{ fontSize: 20, marginLeft: 8 }}>➕</Text>}
+              right={() => <Text style={{ fontSize: 18, marginRight: 8, color: COLORS.textSecondary }}>›</Text>}
               onPress={() => { resetForm(); setSection('newFamily'); }}
             />
             <Divider />
             <List.Item
               title="회원 관리"
               description={`${members.filter((m) => m.is_active).length}명 | 정보 수정/삭제`}
-              left={(props) => <List.Icon {...props} icon="account-group" />}
-              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              left={() => <Text style={{ fontSize: 20, marginLeft: 8 }}>👥</Text>}
+              right={() => <Text style={{ fontSize: 18, marginRight: 8, color: COLORS.textSecondary }}>›</Text>}
               onPress={() => setSection('members')}
             />
             <Divider />
             <List.Item
               title="제자반 관리"
               description={`${classes.filter((c) => c.is_active).length}개`}
-              left={(props) => <List.Icon {...props} icon="school" />}
-              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              left={() => <Text style={{ fontSize: 20, marginLeft: 8 }}>📚</Text>}
+              right={() => <Text style={{ fontSize: 18, marginRight: 8, color: COLORS.textSecondary }}>›</Text>}
               onPress={() => setSection('classes')}
             />
             <Divider />
             <List.Item
               title="계정 관리"
               description="사용자 계정 생성/역할 설정"
-              left={(props) => <List.Icon {...props} icon="account-cog" />}
-              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              left={() => <Text style={{ fontSize: 20, marginLeft: 8 }}>🔑</Text>}
+              right={() => <Text style={{ fontSize: 18, marginRight: 8, color: COLORS.textSecondary }}>›</Text>}
               onPress={() => setSection('accounts')}
             />
             <Divider />
             <List.Item
               title="알림 설정"
               description="예약 알림 관리"
-              left={(props) => <List.Icon {...props} icon="bell-ring" />}
-              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              left={() => <Text style={{ fontSize: 20, marginLeft: 8 }}>🔔</Text>}
+              right={() => <Text style={{ fontSize: 18, marginRight: 8, color: COLORS.textSecondary }}>›</Text>}
               onPress={() => setSection('notifications')}
             />
           </Card>
@@ -297,7 +297,7 @@ export default function AdminScreen() {
         <Card style={styles.card}>
           <List.Item
             title="로그아웃"
-            left={(props) => <List.Icon {...props} icon="logout" color={COLORS.danger} />}
+            left={() => <Text style={{ fontSize: 20, marginLeft: 8 }}>🚪</Text>}
             titleStyle={{ color: COLORS.danger }}
             onPress={handleLogout}
           />
@@ -313,7 +313,7 @@ export default function AdminScreen() {
     return (
       <ScrollView style={styles.container}>
         <View style={styles.sectionHeader}>
-          <Button icon="arrow-left" onPress={() => { resetForm(); setSection('menu'); }}>뒤로</Button>
+          <Button onPress={() => { resetForm(); setSection('menu'); }}>뒤로</Button>
           <Text style={styles.sectionTitle}>새가족 등록</Text>
           <View style={{ width: 80 }} />
         </View>
@@ -348,8 +348,7 @@ export default function AdminScreen() {
             </View>
 
             <Button mode="contained" onPress={handleAddMember} style={styles.submitBtn} contentStyle={{ paddingVertical: 6 }}
-              icon="account-plus"
-            >
+                         >
               새가족 등록
             </Button>
           </Card.Content>
@@ -364,9 +363,9 @@ export default function AdminScreen() {
     return (
       <ScrollView style={styles.container}>
         <View style={styles.sectionHeader}>
-          <Button icon="arrow-left" onPress={() => setSection('menu')}>뒤로</Button>
+          <Button onPress={() => setSection('menu')}>뒤로</Button>
           <Text style={styles.sectionTitle}>회원 관리 ({activeMembers.length}명)</Text>
-          <Button icon="plus" mode="contained" onPress={() => { resetForm(); setSection('addMember'); }} compact>추가</Button>
+          <Button mode="contained" onPress={() => { resetForm(); setSection('addMember'); }} compact>추가</Button>
         </View>
         {activeMembers.map((m) => {
           const cls = classes.find((c) => c.id === m.class_id);
@@ -380,8 +379,8 @@ export default function AdminScreen() {
                     {m.date_of_birth ? ` | ${calculateAge(m.date_of_birth)}세` : ''}
                   </Text>
                 </View>
-                <IconButton icon="pencil" iconColor={COLORS.primary} onPress={() => openEditMember(m.id)} size={20} />
-                <IconButton icon="delete" iconColor={COLORS.danger} onPress={() => handleDeleteMember(m.id, m.name)} size={20} />
+                <Button mode="text" compact onPress={() => openEditMember(m.id)} labelStyle={{ fontSize: 12 }}>수정</Button>
+                <Button mode="text" compact onPress={() => handleDeleteMember(m.id, m.name)} labelStyle={{ fontSize: 12, color: COLORS.danger }}>삭제</Button>
               </Card.Content>
             </Card>
           );
@@ -396,7 +395,7 @@ export default function AdminScreen() {
     return (
       <ScrollView style={styles.container}>
         <View style={styles.sectionHeader}>
-          <Button icon="arrow-left" onPress={() => { resetForm(); setSection('members'); }}>뒤로</Button>
+          <Button onPress={() => { resetForm(); setSection('members'); }}>뒤로</Button>
           <Text style={styles.sectionTitle}>회원 추가</Text>
           <View style={{ width: 80 }} />
         </View>
@@ -432,7 +431,7 @@ export default function AdminScreen() {
     return (
       <ScrollView style={styles.container}>
         <View style={styles.sectionHeader}>
-          <Button icon="arrow-left" onPress={() => { resetForm(); setSection('members'); }}>뒤로</Button>
+          <Button onPress={() => { resetForm(); setSection('members'); }}>뒤로</Button>
           <Text style={styles.sectionTitle}>정보 수정</Text>
           <View style={{ width: 80 }} />
         </View>
@@ -458,8 +457,7 @@ export default function AdminScreen() {
             </View>
 
             <Button mode="contained" onPress={handleUpdateMember} style={styles.submitBtn} contentStyle={{ paddingVertical: 6 }}
-              icon="content-save"
-            >
+                         >
               저장
             </Button>
           </Card.Content>
@@ -474,9 +472,9 @@ export default function AdminScreen() {
     return (
       <ScrollView style={styles.container}>
         <View style={styles.sectionHeader}>
-          <Button icon="arrow-left" onPress={() => setSection('menu')}>뒤로</Button>
+          <Button onPress={() => setSection('menu')}>뒤로</Button>
           <Text style={styles.sectionTitle}>제자반 관리 ({activeClasses.length}개)</Text>
-          <Button icon="plus" mode="contained" onPress={() => setSection('addClass')} compact>추가</Button>
+          <Button mode="contained" onPress={() => setSection('addClass')} compact>추가</Button>
         </View>
         {activeClasses.map((c) => {
           const memberCount = members.filter((m) => m.class_id === c.id && m.is_active).length;
@@ -490,8 +488,8 @@ export default function AdminScreen() {
                     {memberCount}명 | 강사: {instructor?.display_name || '미배정'} | {c.description || '설명 없음'}
                   </Text>
                 </View>
-                <IconButton icon="pencil" iconColor={COLORS.primary} onPress={() => openEditClass(c.id)} size={20} />
-                <IconButton icon="delete" iconColor={COLORS.danger} onPress={() => handleDeleteClass(c.id, c.name)} size={20} />
+                <Button mode="text" compact onPress={() => openEditClass(c.id)} labelStyle={{ fontSize: 12 }}>수정</Button>
+                <Button mode="text" compact onPress={() => handleDeleteClass(c.id, c.name)} labelStyle={{ fontSize: 12, color: COLORS.danger }}>삭제</Button>
               </Card.Content>
             </Card>
           );
@@ -506,7 +504,7 @@ export default function AdminScreen() {
     return (
       <ScrollView style={styles.container}>
         <View style={styles.sectionHeader}>
-          <Button icon="arrow-left" onPress={() => setSection('classes')}>뒤로</Button>
+          <Button onPress={() => setSection('classes')}>뒤로</Button>
           <Text style={styles.sectionTitle}>제자반 추가</Text>
           <View style={{ width: 80 }} />
         </View>
@@ -528,7 +526,7 @@ export default function AdminScreen() {
     return (
       <ScrollView style={styles.container}>
         <View style={styles.sectionHeader}>
-          <Button icon="arrow-left" onPress={() => { setEditingClassId(null); setSection('classes'); }}>뒤로</Button>
+          <Button onPress={() => { setEditingClassId(null); setSection('classes'); }}>뒤로</Button>
           <Text style={styles.sectionTitle}>제자반 수정</Text>
           <View style={{ width: 80 }} />
         </View>
@@ -563,7 +561,7 @@ export default function AdminScreen() {
               </Text>
             )}
 
-            <Button mode="contained" onPress={handleUpdateClass} style={styles.submitBtn} contentStyle={{ paddingVertical: 6 }} icon="content-save">
+            <Button mode="contained" onPress={handleUpdateClass} style={styles.submitBtn} contentStyle={{ paddingVertical: 6 }}>
               저장
             </Button>
           </Card.Content>
@@ -577,7 +575,7 @@ export default function AdminScreen() {
     return (
       <ScrollView style={styles.container}>
         <View style={styles.sectionHeader}>
-          <Button icon="arrow-left" onPress={() => setSection('menu')}>뒤로</Button>
+          <Button onPress={() => setSection('menu')}>뒤로</Button>
           <Text style={styles.sectionTitle}>강사 계정 생성</Text>
           <View style={{ width: 80 }} />
         </View>
@@ -624,7 +622,7 @@ export default function AdminScreen() {
             )}
 
             <Button mode="contained" onPress={handleCreateAccount} style={styles.submitBtn} contentStyle={{ paddingVertical: 6 }}
-              icon="account-plus" buttonColor={accountType === 'officer' ? '#8E44AD' : undefined}
+              buttonColor={accountType === 'officer' ? '#8E44AD' : undefined}
             >
               {accountType === 'instructor' ? '강사' : '임원'} 계정 생성
             </Button>
@@ -645,7 +643,7 @@ export default function AdminScreen() {
     return (
       <ScrollView style={styles.container}>
         <View style={styles.sectionHeader}>
-          <Button icon="arrow-left" onPress={() => setSection('menu')}>뒤로</Button>
+          <Button onPress={() => setSection('menu')}>뒤로</Button>
           <Text style={styles.sectionTitle}>알림 설정</Text>
           <View style={{ width: 80 }} />
         </View>
@@ -654,12 +652,12 @@ export default function AdminScreen() {
           <Card.Title title="자동 알림 (기본 설정)" />
           <Card.Content>
             <View style={styles.notiRow}>
-              <Chip icon="cake-variant" compact>생일 알림</Chip>
+              <Chip compact>🎂 생일 알림</Chip>
               <Text style={styles.notiDesc}>매일 오전 9시 | 담당 강사에게</Text>
             </View>
             <Divider style={{ marginVertical: 8 }} />
             <View style={styles.notiRow}>
-              <Chip icon="church" compact>출석 체크 알림</Chip>
+              <Chip compact>⛪ 출석 체크 알림</Chip>
               <Text style={styles.notiDesc}>매주 일요일 19시 | 전체 강사에게</Text>
             </View>
           </Card.Content>
@@ -690,8 +688,7 @@ export default function AdminScreen() {
             </View>
 
             <Button mode="contained" onPress={handleSaveNotification} style={styles.submitBtn}
-              contentStyle={{ paddingVertical: 6 }} icon="bell-plus"
-            >
+              contentStyle={{ paddingVertical: 6 }}            >
               알림 저장
             </Button>
           </Card.Content>
