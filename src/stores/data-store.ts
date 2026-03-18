@@ -137,13 +137,25 @@ export const useDataStore = create<DataState>((set, get) => ({
       }
     });
 
-    const { error } = await supabase
+    // 디버깅: 실제 전송 데이터 확인
+    console.log('updateMember id:', id);
+    console.log('updateMember cleanUpdates:', JSON.stringify(cleanUpdates));
+
+    const { data, error, count } = await supabase
       .from('members')
       .update(cleanUpdates)
-      .eq('id', id);
+      .eq('id', id)
+      .select();
+
+    console.log('updateMember result:', { data, error, count });
 
     if (error) {
-      console.error('updateMember error:', error);
+      if (typeof window !== 'undefined') window.alert('DB 수정 오류: ' + error.message);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      if (typeof window !== 'undefined') window.alert('수정된 행이 없습니다. RLS 정책을 확인하세요.\n\nID: ' + id);
       return;
     }
 
