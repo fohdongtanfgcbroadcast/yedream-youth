@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>예닮드림 청년부</title>
+  <script>
+    // GitHub Pages SPA: 모든 404를 루트로 리다이렉트
+    // 원래 경로를 sessionStorage에 저장 후 index.html에서 복원
+    sessionStorage.setItem('spa-redirect', window.location.pathname + window.location.search + window.location.hash);
+    window.location.replace('/yedream-youth/');
+  </script>
+</head>
+<body></body>
+</html>
